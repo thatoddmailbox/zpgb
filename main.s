@@ -84,9 +84,9 @@ main:
 	; Set the shared tile data
 	ld hl, shared_tile_data
 	ld bc, sharedset
-	ld a, (sharedset_end - sharedset)
+	ld d, 255
 	call memcpy
-	ld a, (sharedset_end - sharedset)
+	ld d, ((sharedset_end - sharedset) - 255)
 	call memcpy
 
 	; Set the sprite tile data
@@ -174,7 +174,7 @@ loop:
 	; pull p14 low
 	ld hl, P1
 	ld [hl], 0b00100000
-	; read key input...twice
+	; read d-pad input...twice because of hw bug
 	ld a, [hl]
 	ld a, [hl]
 	; reset the port
