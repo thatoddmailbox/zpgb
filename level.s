@@ -1,4 +1,3 @@
-
 ; load_level: Loads the level pointed to by BC to tile map 1.
 load_level:
 	; switch the ram to bank 1 (with the level buffer)
@@ -15,6 +14,12 @@ load_level_to_temp_loop:
 	dec e
 	jp nz, load_level_to_temp_loop
 
+	; copy the trigger table
+	ld a, [bc] ; get its length first
+	add a, 2 ; add one to it so the length and entry count is copied too
+	ld d, a
+	call memcpy
+
 	; set the tile bank to color palette mode
 	ld a, 1
 	ldh [VBK], a
@@ -29,12 +34,18 @@ load_level_palette_inner_loop:
 	ldi a, [hl]
 	cp 0x81
 	jp z, load_level_palette_1
-	jp load_level_palette_0
+	cp 0x9A
+	jp z, load_level_palette_2
+	cp 0x9B
+	jp z, load_level_palette_2
 	load_level_palette_0:
 	ld a, 0
 	jp load_level_palette_inner_loop_done
 	load_level_palette_1:
 	ld a, 1
+	jp load_level_palette_inner_loop_done
+	load_level_palette_2:
+	ld a, 2
 	load_level_palette_inner_loop_done:
 	ld [bc], a
 	inc bc
@@ -66,7 +77,7 @@ copy_temp_level_buffer_to_bg:
 	ldh [HDMA4], a
 
 	; set number of bytes and go
-	ld a, (LEVEL_TILE_COUNT >> 4)
+	ld a, ((LEVEL_TILE_COUNT >> 4) - 1)
 	ldh [HDMA5], a
 
 	ret
@@ -173,8 +184,14 @@ check_tile_is_solid_from_hl:
 	; is it air?
 	cp 0
 	jp z, check_tile_is_solid_no
-	; is it laser?
+	; is it horizontal laser?
 	cp 1
+	jp z, check_tile_is_solid_no
+	; is it debug smiley?
+	cp 2
+	jp z, check_tile_is_solid_no
+	; is it vertical laser?
+	cp 3
 	jp z, check_tile_is_solid_no
 
 	; ok it must be solid then
@@ -295,11 +312,12 @@ calculate_level_lasers:
 	ld a, 1
 	ldh [SVBK], a
 
-	ld hl, temp_level_buffer
 	; clear all currently on things (except emitters)
+	ld hl, calculate_level_laser_clear_tile
+	call calculate_level_lasers_for_each
 
-	ld hl, calculate_level_laser_check_emitter
 	; for each emitter, call calculate_level_laser_from_emitter
+	ld hl, calculate_level_laser_check_emitter
 	call calculate_level_lasers_for_each
 
 	; update the VRAM
@@ -328,20 +346,73 @@ calculate_level_loop_resume:
 
 	ret
 
+; calculate_level_laser_clear_tile: turns all laser tiles that aren't emitters off
+calculate_level_laser_clear_tile:
+	ld a, [bc]
+
+	; do you have bit 0 set?
+	bit 0, a
+	jp z, calculate_level_loop_resume ; if no, it cannot be an on laser tile.
+
+	; are you one of the special exceptions?
+	cp 0x81
+	jp z, calculate_level_loop_resume
+	cp 0x83
+	jp z, calculate_level_loop_resume
+	cp 0x85
+	jp z, calculate_level_loop_resume
+	cp 0x87
+	jp z, calculate_level_loop_resume
+	cp 0x89
+	jp z, calculate_level_loop_resume
+	cp 0x9B
+	jp z, calculate_level_loop_resume
+
+	; are you the horizontal laser, which goes from 0x3 -> 0x0?
+	cp 0x3
+	jp z, calculate_level_laser_clear_hlaser_tile
+
+	; no, so turn it off
+	res 0, a
+	ld [bc], a
+
+	jp calculate_level_loop_resume
+calculate_level_laser_clear_hlaser_tile:
+	ld a, 0
+	ld [bc], a
+	jp calculate_level_loop_resume
+
 ; calculate_level_laser_check_emitter: checks if the given tile is an emitter, and if so, begins calculating its path
 calculate_level_laser_check_emitter:
+	push de
 	; check what tile it is
 	ld a, [bc]
-	cp 0x83 ; enabled laser emitter?
-	jp nz, calculate_level_laser_check_emitter_done
 
+	cp 0x83 ; laser emitter, dir 0, on
+	ld d, 0 ; direction
+	jp z, calculate_level_laser_check_emitter_go
+	cp 0x85 ; laser emitter, dir 1, on
+	ld d, 1 ; direction
+	jp z, calculate_level_laser_check_emitter_go
+	cp 0x87 ; laser emitter, dir 2, on
+	ld d, 2 ; direction
+	jp z, calculate_level_laser_check_emitter_go
+	cp 0x89 ; laser emitter, dir 3, on
+	ld d, 3 ; direction
+	jp z, calculate_level_laser_check_emitter_go
+
+	; must not be then
+	jp calculate_level_laser_check_emitter_done
+calculate_level_laser_check_emitter_go:
 	; it is!
 	call calculate_level_laser_from_emitter
 
 calculate_level_laser_check_emitter_done:
+	pop de
 	jp calculate_level_loop_resume
 
 ; calculate_level_laser_from_emitter: follows the path from the emitter
+; Input: d = direction
 calculate_level_laser_from_emitter:
 	push bc
 	push hl
@@ -352,21 +423,147 @@ calculate_level_laser_from_emitter:
 calculate_level_laser_from_emitter_tile_loop:
 	; find the next tile
 	push bc
-	ld b, 0xFF ; bc = -32
-	ld c, 0xE0
-	add hl, bc
+	call level_laser_step_one
 	pop bc
+
+	; TODO: maybe use a jump table for this?
+
+	; check if that tile is a reflector
+	; reflector ids: 0x92, 0x94, 0x96, 0x98
+	ld a, [hl]
+	cp 0x92
+	jp z, calculate_level_laser_from_emitter_tile_loop_reflector
+	cp 0x94
+	jp z, calculate_level_laser_from_emitter_tile_loop_reflector
+	cp 0x96
+	jp z, calculate_level_laser_from_emitter_tile_loop_reflector
+	cp 0x98
+	jp z, calculate_level_laser_from_emitter_tile_loop_reflector
 
 	; check if that tile is solid
 	call check_tile_is_solid_from_hl
 	jp z, calculate_level_laser_from_emitter_done ; it is solid, rip path
 
+	; figure out what tile to place
+	bit 0, d
+	ld e, 0x1
+	jp z, calculate_level_laser_from_emitter_tile_loop_dir_done ; it's either up or down
+	ld e, 0x3
+
+calculate_level_laser_from_emitter_tile_loop_dir_done:
 	; it isn't solid, so set it to a laser and keep going
-	ld [hl], 0x1
-	ld b, b
+	ld a, e
+	ld [hl], a
+	jp calculate_level_laser_from_emitter_tile_loop
+
+calculate_level_laser_from_emitter_tile_loop_reflector:
+	push bc
+	; check its direction
+	sub 0x92
+	srl a
+	ld e, a ; e = direction possiblity 1
+	sub 1
+	and 3
+	ld c, a ; c = direction possiblity 2
+
+	ld a, d
+	; check if we can go
+	cp e
+	jp z, calculate_level_laser_from_emitter_tile_loop_reflector_ok
+	cp c
+	pop bc
+	jp nz, calculate_level_laser_from_emitter_done ; we can't reflect, so rip path
+	push bc
+calculate_level_laser_from_emitter_tile_loop_reflector_ok:
+	pop bc
+	; turn on the reflector
+	set 0, [hl]
+
+	; set the new direction
+	ld a, d
+	add a, 1
+	and 3 ; make sure it is within 0 to 3
+	ld d, a
+
 	jp calculate_level_laser_from_emitter_tile_loop
 
 calculate_level_laser_from_emitter_done:
 	pop hl
 	pop bc
 	ret
+
+level_laser_step_table:
+	; up
+	db 0xFF ; -32
+	db 0xE0
+
+	; right
+	db 0x00 ; +1
+	db 0x01
+
+	; down
+	db 0x00 ; +32
+	db 0x20
+
+	; left
+	db 0xFF ; -1
+	db 0xFE
+
+; level_laser_step_one: Modifies HL by stepping a laser originating from BC one step in direction D.
+level_laser_step_one:
+	push hl
+	push af
+
+	ld hl, level_laser_step_table
+	ld a, d
+	add a, a
+	ld b, 0
+	ld c, a
+	add hl, bc ; get the entry in the table
+
+	ldi a, [hl]
+	ld b, a
+	ldi a, [hl]
+	ld c, a
+
+	pop af
+	pop hl
+	add hl, bc
+	ret
+
+; level_toggle_bc: Toggles the tile in address BC on or off.
+level_toggle_bc:
+	ld a, [bc]
+	bit 0, a
+	jp nz, level_toggle_bc_set_off
+	set 0, a
+	jp level_toggle_bc_set_done
+level_toggle_bc_set_off:
+	res 0, a
+level_toggle_bc_set_done:
+	ld [bc], a
+	ret
+
+; level_lever_trigger: Called when a lever is toggled
+level_lever_trigger:
+	; toggle the lever tile
+	call level_toggle_bc
+
+	; get the target
+	; this is weird because there's a layer of indirection, where de points to a pointer to the target
+	ld h, d
+	ld l, e
+	ldi a, [hl]
+	ld c, a
+	ldi a, [hl]
+	ld b, a
+	cp 0
+	jp z, level_lever_trigger_done
+
+	; toggle the target
+	call level_toggle_bc
+
+level_lever_trigger_done:
+	call calculate_level_lasers
+
+	jp player_trigger_tile_entry_resume

@@ -1,6 +1,8 @@
 .org 0x40
 int_vblank:
+	push af
 	call dma_code_highram
+	pop af
 	reti
 
 .org 0x48

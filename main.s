@@ -32,6 +32,10 @@ main:
 	call disable_lcd
 
 	; Set up variables and stuff
+	ld a, 0
+	ld [frame_counter], a
+	ld [last_p14], a
+	ld [last_p15], a
 	ld a, 1
 	ld [current_screen], a
 	ld a, 8
@@ -58,6 +62,8 @@ main:
 	ld hl, oam_data
 	ld bc, sprite_ram_len
 	call clrmem
+
+	call selector_init
 
 	; Load level 
 	ld bc, level1
@@ -121,8 +127,18 @@ main:
 	ld [hl], 0b00000000 ; black
 	ld [hl], 0b00000000
 
-	; BG 2-6
-	ld a, 5*8
+	; BG 2
+	ld [hl], 0b10110101 ; background gray
+	ld [hl], 0b01010110
+	ld [hl], 0b10000100 ; dark gray
+	ld [hl], 0b00010000
+	ld [hl], 0b00011111 ; off red
+	ld [hl], 0b00000000
+	ld [hl], 0b00100001 ; on green
+	ld [hl], 0b10000010
+
+	; BG 3-6
+	ld a, 4*8
 reset_bg_palettes_loop:
 	ld [hl], 0b00000000
 	dec a
@@ -163,7 +179,6 @@ reset_bg_palettes_loop:
 	call calc_viewport_scroll
 
 	ei
-
 loop:
 	; wait for vblank
 	ld a, 0b00000001
@@ -171,15 +186,33 @@ loop:
 	halt
 	nop
 
-	; pull p14 low
+	; input
 	ld hl, P1
+	ld a, [last_p15]
+	ld d, a
+
+	; pull p14 low
 	ld [hl], 0b00100000
-	; read d-pad input...twice because of hw bug
+	; read d-pad input...twice
 	ld a, [hl]
 	ld a, [hl]
+
+	; pull p15 low
+	ld [hl], 0b00010000
+	; read other inputs (done six times, as programming manual states)
+	ld b, [hl]
+	ld b, [hl]
+	ld b, [hl]
+	ld b, [hl]
+	ld b, [hl]
+	ld b, [hl]
+
 	; reset the port
 	ld [hl], 0b00110000
 	
+	push bc
+	push de
+	; test d-pad inputs
 	bit 0, a
 	call z, move_right
 	bit 1, a
@@ -188,8 +221,33 @@ loop:
 	call z, move_up
 	bit 3, a
 	call z, move_down
+	pop de
+	pop bc
 
+	; test other inputs
+	bit 0, b ; is the a button up now?
+	jp nz, read_input_skip_a
+	bit 0, d ; was it down before?
+	push bc
+	call nz, a_button
+	pop bc
+read_input_skip_a:
+
+	bit 1, b ; is the b button up now?
+	jp nz, read_input_skip_b
+	bit 1, d ; was it down before?
+	push bc
+	call nz, b_button
+	pop bc
+read_input_skip_b:
+
+	; save this frame's input
+	ld a, b
+	ld [last_p15], a
+
+	; print debug info
 	ld hl, num_buf
+
 	ld a, [player_x]
 	call print_num
 	ld a, '-'
@@ -198,7 +256,7 @@ loop:
 	call print_num
 	ld a, '-'
 	ldi [hl], a
-	ld a, [SCY]
+	ld a, [last_p15]
 	call print_num
 
 	ld a, 0
@@ -212,6 +270,20 @@ loop:
 
 .incasm "screens.s"
 .incasm "level.s"
+.incasm "player.s"
+.incasm "selector.s"
+
+a_button:
+	ld a, 0
+	call player_trigger
+	ret
+
+b_button:
+	call selector_start_selecting
+	ld a, 1
+	call player_trigger
+	call selector_set_sprites
+	ret
 
 move_up:
 	push af
@@ -262,6 +334,7 @@ move_right:
 	inc [hl]
 move_done:
 	call calc_viewport_scroll
+	call selector_set_sprites
 	pop af
 	ret
 
