@@ -321,7 +321,10 @@ calculate_level_lasers:
 	call calculate_level_lasers_for_each
 
 	; update the VRAM
-	call wait_for_vblank
+	ld a, 0b00000001
+	ldh [IE], a
+	halt
+	nop
 	jp copy_temp_level_buffer_to_bg
 
 ; calculate_level_lasers_for_each: calls hl for every tile, with bc holding the current tile

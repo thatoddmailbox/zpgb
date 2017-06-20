@@ -36,6 +36,7 @@ main:
 	ld [frame_counter], a
 	ld [last_p14], a
 	ld [last_p15], a
+	ld [num_buf], a
 	ld a, 1
 	ld [current_screen], a
 	ld a, 8
@@ -160,12 +161,22 @@ reset_bg_palettes_loop:
 
 	ld hl, OCPD
 
-	; OBJ 1
+	; OBJ 0
 	ld [hl], 0b00000000 ; transparent
 	ld [hl], 0b00000000
 	ld [hl], 0b00011111 ; orange
 	ld [hl], 0b00000000 ;
 	ld [hl], 0b11111111 ; yellow
+	ld [hl], 0b00000011 ;
+	ld [hl], 0b00000000 ; black
+	ld [hl], 0b00000000 ;
+
+	; OBJ 1
+	ld [hl], 0b00000000 ; transparent
+	ld [hl], 0b00000000
+	ld [hl], 0b00000011 ; unselected selector color
+	ld [hl], 0b00000000 ;
+	ld [hl], 0b11111111 ; selected selector color
 	ld [hl], 0b00000011 ;
 	ld [hl], 0b00000000 ; black
 	ld [hl], 0b00000000 ;
@@ -186,8 +197,14 @@ loop:
 	halt
 	nop
 
+	ld bc, num_buf
+	ld hl, bg_tile_map_2
+	call strcpy
+
 	; input
 	ld hl, P1
+	ld a, [last_p14]
+	ld c, a
 	ld a, [last_p15]
 	ld d, a
 
@@ -212,6 +229,12 @@ loop:
 	
 	push bc
 	push de
+	ld d, a
+	ld a, [selector_mode]
+	cp 0
+	ld a, d
+	jp nz, read_input_p14_selector
+	; movement mode
 	; test d-pad inputs
 	bit 0, a
 	call z, move_right
@@ -221,29 +244,50 @@ loop:
 	call z, move_up
 	bit 3, a
 	call z, move_down
+	jp read_input_p14_done
+read_input_p14_selector:
+	; selector mode
+	bit 0, a ; is the right button down?
+	jp nz, read_input_p14_selector_skip_right
+	bit 0, c ; was it up before?
+	ld d, 1
+	call nz, selector_move
+read_input_p14_selector_skip_right:
+	bit 1, a ; is the left button down?
+	jp nz, read_input_p14_done
+	bit 1, c ; was it up before?
+	ld d, 255
+	call nz, selector_move
+read_input_p14_done:
 	pop de
 	pop bc
 
 	; test other inputs
 	bit 0, b ; is the a button up now?
 	jp nz, read_input_skip_a
-	bit 0, d ; was it down before?
+	bit 0, d ; was it up before?
 	push bc
 	call nz, a_button
 	pop bc
 read_input_skip_a:
-
 	bit 1, b ; is the b button up now?
 	jp nz, read_input_skip_b
-	bit 1, d ; was it down before?
+	bit 1, d ; was it up before?
 	push bc
 	call nz, b_button
 	pop bc
 read_input_skip_b:
-
 	; save this frame's input
+	ld [last_p14], a
 	ld a, b
 	ld [last_p15], a
+
+	; if we're in selection mode, animate the thingies
+	ld a, [selector_mode]
+	cp 0
+	jp z, loop_not_selector_mode
+	call selector_tick
+loop_not_selector_mode:
 
 	; print debug info
 	ld hl, num_buf
@@ -258,13 +302,13 @@ read_input_skip_b:
 	ldi [hl], a
 	ld a, [last_p15]
 	call print_num
+	ld a, '-'
+	ldi [hl], a
+	ld a, [selector_select_index]
+	call print_num
 
 	ld a, 0
 	ldi [hl], a
-
-	ld bc, num_buf
-	ld hl, bg_tile_map_2
-	call strcpy
 
 	jp loop
 
@@ -274,14 +318,40 @@ read_input_skip_b:
 .incasm "selector.s"
 
 a_button:
+	ld a, [selector_mode]
+	cp 0
+	jp nz, a_button_selector_mode
+a_button_movement_mode:
 	ld a, 0
 	call player_trigger
 	ret
+a_button_selector_mode:
+	call selector_select
+	ret
 
 b_button:
+	ld a, [selector_mode]
+	cp 0
+	jp nz, b_button_selector_mode
+b_button_movement_mode:
 	call selector_start_selecting
 	ld a, 1
 	call player_trigger
+	; check if we actually found anything
+	ld a, [selector_found_count]
+	cp 0
+	jp z, b_button_movement_mode_done
+	ld a, 1
+	ld [selector_mode], a
+	call selector_set_sprites
+b_button_movement_mode_done:
+	ret
+b_button_selector_mode:
+	; disable selector mode
+	ld a, 0
+	ld [selector_mode], a
+	; reset current info
+	call selector_start_selecting
 	call selector_set_sprites
 	ret
 
@@ -334,7 +404,6 @@ move_right:
 	inc [hl]
 move_done:
 	call calc_viewport_scroll
-	call selector_set_sprites
 	pop af
 	ret
 

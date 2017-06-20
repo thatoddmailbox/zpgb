@@ -55,15 +55,17 @@
 ; ram variables
 .def ram_fixed_start 0xC000
 
-.def current_screen (ram_fixed_start+0x0)
-.def player_x (ram_fixed_start+0x1)
-.def player_y (ram_fixed_start+0x2)
-.def frame_counter (ram_fixed_start+0x3)
-.def last_p14 (ram_fixed_start+0x4)
-.def last_p15 (ram_fixed_start+0x5)
-.def selector_mode (ram_fixed_start+0x6)
-.def selector_found_count (ram_fixed_start+0x7)
-.def num_buf (ram_fixed_start+0x8)
+.def current_screen (ram_fixed_start+0)
+.def player_x (ram_fixed_start+1)
+.def player_y (ram_fixed_start+2)
+.def frame_counter (ram_fixed_start+3)
+.def last_p14 (ram_fixed_start+4)
+.def last_p15 (ram_fixed_start+5)
+.def selector_mode (ram_fixed_start+6)
+.def selector_select_index (ram_fixed_start+7)
+.def selector_found_count (ram_fixed_start+8)
+.def selector_frame_counter (ram_fixed_start+9)
+.def num_buf (ram_fixed_start+10)
 
 .def selector_select_table (ram_fixed_start+0x100)
 
