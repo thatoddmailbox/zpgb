@@ -193,6 +193,9 @@ check_tile_is_solid_from_hl:
 	; is it vertical laser?
 	cp 3
 	jp z, check_tile_is_solid_no
+	; is it combo laser?
+	cp 5
+	jp z, check_tile_is_solid_no
 
 	; ok it must be solid then
 	ld a, 1
@@ -374,6 +377,9 @@ calculate_level_laser_clear_tile:
 	; are you the horizontal laser, which goes from 0x3 -> 0x0?
 	cp 0x3
 	jp z, calculate_level_laser_clear_hlaser_tile
+	; are you the combo laser, which goes from 0x5 -> 0x0?
+	cp 0x5
+	jp z, calculate_level_laser_clear_hlaser_tile
 
 	; no, so turn it off
 	res 0, a
@@ -455,8 +461,14 @@ calculate_level_laser_from_emitter_tile_loop:
 
 calculate_level_laser_from_emitter_tile_loop_dir_done:
 	; it isn't solid, so set it to a laser and keep going
+	; but first check if it already is a laser, in which case we set it to the combo tile
+	bit 0, [hl]
+	jp nz, calculate_level_laser_from_emitter_tile_loop_dir_done_combo_laser ; the only non-solid tiles with bit 0 set are the laser ones
 	ld a, e
 	ld [hl], a
+	jp calculate_level_laser_from_emitter_tile_loop
+calculate_level_laser_from_emitter_tile_loop_dir_done_combo_laser:
+	ld [hl], 5
 	jp calculate_level_laser_from_emitter_tile_loop
 
 calculate_level_laser_from_emitter_tile_loop_reflector:
@@ -472,22 +484,24 @@ calculate_level_laser_from_emitter_tile_loop_reflector:
 	ld a, d
 	; check if we can go
 	cp e
+	ld b, 0x01 ; if we go with the first possibility, we need to add 1 to the direction
 	jp z, calculate_level_laser_from_emitter_tile_loop_reflector_ok
 	cp c
+	ld b, 0xFF ; if we go with the first possibility, we need to subtract 1 from the direction (add -1)
+	jp z, calculate_level_laser_from_emitter_tile_loop_reflector_ok
 	pop bc
-	jp nz, calculate_level_laser_from_emitter_done ; we can't reflect, so rip path
-	push bc
+	jp calculate_level_laser_from_emitter_done ; we can't reflect, so rip path
 calculate_level_laser_from_emitter_tile_loop_reflector_ok:
-	pop bc
 	; turn on the reflector
 	set 0, [hl]
 
 	; set the new direction
 	ld a, d
-	add a, 1
+	add a, b
 	and 3 ; make sure it is within 0 to 3
 	ld d, a
 
+	pop bc
 	jp calculate_level_laser_from_emitter_tile_loop
 
 calculate_level_laser_from_emitter_done:
@@ -510,7 +524,7 @@ level_laser_step_table:
 
 	; left
 	db 0xFF ; -1
-	db 0xFE
+	db 0xFF
 
 ; level_laser_step_one: Modifies HL by stepping a laser originating from BC one step in direction D.
 level_laser_step_one:
