@@ -196,6 +196,15 @@ check_tile_is_solid_from_hl:
 	; is it combo laser?
 	cp 5
 	jp z, check_tile_is_solid_no
+	; is it an activated piston arm?
+	cp 0xA5
+	jp z, check_tile_is_solid_no
+	cp 0xA7
+	jp z, check_tile_is_solid_no
+	cp 0xA9
+	jp z, check_tile_is_solid_no
+	cp 0xAB
+	jp z, check_tile_is_solid_no
 
 	; ok it must be solid then
 	ld a, 1
@@ -449,6 +458,32 @@ calculate_level_laser_from_emitter_tile_loop:
 	cp 0x98
 	jp z, calculate_level_laser_from_emitter_tile_loop_reflector
 
+	; check if that tile is a receptor
+	; receptors are from 0x8A to 0x91, inclusive
+	ld a, [hl]
+	cp 0x8A
+	jp c, calculate_level_laser_from_emitter_not_receptor ; a < 0x8A
+	cp (0x91+1)
+	jp nc, calculate_level_laser_from_emitter_not_receptor ; a >= (0x91 + 1)
+
+	; ok it's a receptor then
+	; check its direction
+	sub 0x8A
+	srl a
+	; get the direction we need the laser to be going
+	add a, 2
+	and 3
+	; check if the laser is actually going that direction
+	cp d
+	jp nz, calculate_level_laser_from_emitter_done
+	; ok it's right
+	set 0, [hl] ; turn it on
+	ld a, 2 ; trigger it with the laser trigger mode rather than the player trigger mode
+	call player_trigger_tile
+
+	jp calculate_level_laser_from_emitter_done
+calculate_level_laser_from_emitter_not_receptor:
+
 	; check if that tile is solid
 	call check_tile_is_solid_from_hl
 	jp z, calculate_level_laser_from_emitter_done ; it is solid, rip path
@@ -559,13 +594,49 @@ level_toggle_bc_set_off:
 	res 0, a
 level_toggle_bc_set_done:
 	ld [bc], a
+	; did we just toggle a piston base?
+	cp 0x9C
+	jp c, level_toggle_bc_set_done_not_piston ; a < 0x9C
+	cp (0xA3 + 1) ; a >= (0xA3 + 1)
+	jp nc, level_toggle_bc_set_done_not_piston
+
+	; we did, so toggle its arm
+	push hl
+	push de
+	push bc
+	; find what direction we're in
+	ld hl, level_laser_step_table
+	sub 0x9C
+	srl a
+	add a, a ; double it because table entries are two bytes
+	ld b, 0
+	ld c, a
+	add hl, bc
+	
+	ldi a, [hl]
+	ld d, a
+	ldi a, [hl]
+	ld e, a
+
+	pop bc
+	ld h, b
+	ld l, c
+	add hl, de
+	ld b, h
+	ld c, l
+
+	call level_toggle_bc
+
+	pop de
+	pop hl
+level_toggle_bc_set_done_not_piston:
 	ret
 
 ; level_lever_trigger: Called when a lever is toggled
 level_lever_trigger:
 	; toggle the lever tile
 	call level_toggle_bc
-
+level_receptor_trigger:
 	; get the target
 	; this is weird because there's a layer of indirection, where de points to a pointer to the target
 	ld h, d
@@ -581,6 +652,4 @@ level_lever_trigger:
 	call level_toggle_bc
 
 level_lever_trigger_done:
-	call calculate_level_lasers
-
 	jp player_trigger_tile_entry_resume

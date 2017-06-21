@@ -93,7 +93,9 @@ main:
 	ld bc, sharedset
 	ld d, 255
 	call memcpy
-	ld d, ((sharedset_end - sharedset) - 255)
+	ld d, 255
+	call memcpy
+	ld d, ((sharedset_end - sharedset) - (255*2))
 	call memcpy
 
 	; Set the sprite tile data

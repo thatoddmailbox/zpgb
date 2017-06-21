@@ -88,6 +88,8 @@ player_trigger_select_action:
 	jp z, player_trigger_tile
 	cp 1 ; find the tiles for zapping
 	jp z, selector_trigger_tile
+	cp 2 ; special mode for being triggered by a laser
+	jp z, player_trigger_tile
 	ret
 
 ; player_trigger_tile: Tries to perform an action on the tile at address HL.
@@ -95,11 +97,26 @@ player_trigger_tile:
 	push af
 	push hl
 	push bc
+	push de
+
 	ld b, h
 	ld c, l
+	ld d, a
 	ld a, [hl]
 	cp 0
 	jp z, player_trigger_tile_done ; it's air, just skip it entirely
+	; check if the tile is a receptor, 0x8A to 0x91 inclusive
+	cp 0x8A
+	jp c, player_trigger_tile_not_receptor ; a < 0x8A
+	cp 0x91
+	jp nc, player_trigger_tile_not_receptor ; a >= 0x91
+	; it is a receptor, so check if we're in the laser mode
+	ld e, a
+	ld a, d
+	cp 2
+	jp nz, player_trigger_tile_done ; no we're not, so scram
+	ld a, e
+player_trigger_tile_not_receptor:
 
 	; ok, go through the triggertable then
 	ld hl, (temp_level_triggertable_buffer + 1)
@@ -146,6 +163,11 @@ player_trigger_tile_entry_resume:
 
 	pop de
 
+	ld a, d
+	cp 0 ; were we in the player mode just now?
+	jp nz, player_trigger_tile_entry_loop_end_3
+	; if so, recalculate lasers
+	call calculate_level_lasers
 	jp player_trigger_tile_entry_loop_end_3
 
 player_trigger_tile_entry_loop_end_1:
@@ -160,6 +182,7 @@ player_trigger_tile_entry_loop_end:
 	dec e
 	jp nz, player_trigger_tile_entry_loop
 player_trigger_tile_done:
+	pop de
 	pop bc
 	pop hl
 	pop af
