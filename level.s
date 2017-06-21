@@ -181,6 +181,7 @@ check_tile_is_solid_skip_loop:
 check_tile_is_solid_from_hl:
 	ld a, [hl]
 
+	; TODO: simplify this
 	; is it air?
 	cp 0
 	jp z, check_tile_is_solid_no
@@ -195,6 +196,15 @@ check_tile_is_solid_from_hl:
 	jp z, check_tile_is_solid_no
 	; is it combo laser?
 	cp 5
+	jp z, check_tile_is_solid_no
+	; is it piston horizontal laser?
+	cp 7
+	jp z, check_tile_is_solid_no
+	; is it piston vertical laser?
+	cp 9
+	jp z, check_tile_is_solid_no
+	; is it piston combo laser?
+	cp 11
 	jp z, check_tile_is_solid_no
 	; is it an activated piston arm?
 	cp 0xA5
@@ -328,6 +338,10 @@ calculate_level_lasers:
 	ld hl, calculate_level_laser_clear_tile
 	call calculate_level_lasers_for_each
 
+	; fix piston arms cleared in the last step
+	ld hl, calculate_level_laser_fix_pistons
+	call calculate_level_lasers_for_each
+
 	; for each emitter, call calculate_level_laser_from_emitter
 	ld hl, calculate_level_laser_check_emitter
 	call calculate_level_lasers_for_each
@@ -390,6 +404,14 @@ calculate_level_laser_clear_tile:
 	cp 0x5
 	jp z, calculate_level_laser_clear_hlaser_tile
 
+	; are you a secret piston arm?
+	cp 0x7
+	jp z, calculate_level_laser_clear_hlaser_tile
+	cp 0x9
+	jp z, calculate_level_laser_clear_hlaser_tile
+	cp 0xb
+	jp z, calculate_level_laser_clear_hlaser_tile
+
 	; no, so turn it off
 	res 0, a
 	ld [bc], a
@@ -398,6 +420,45 @@ calculate_level_laser_clear_tile:
 calculate_level_laser_clear_hlaser_tile:
 	ld a, 0
 	ld [bc], a
+	jp calculate_level_loop_resume
+
+; calculate_level_laser_fix_pistons: adds in the correct piston arms for pistons
+calculate_level_laser_fix_pistons:
+	ld a, [bc]
+	; are you a piston base?
+	cp 0x9C
+	jp c, calculate_level_loop_resume ; tile is < 0x9C
+	cp (0xA3 + 1)
+	jp nc, calculate_level_loop_resume ; tile is >= (0xA3 + 1)
+	
+	; ok you are, find where the arm goes and set that
+	push hl
+	push de
+	push bc
+	ld hl, level_laser_step_table
+	sub 0x9C ; a = double the direction
+	push af
+	res 0, a
+	ld b, 0
+	ld c, a
+	add hl, bc
+	
+	ldi a, [hl]
+	ld d, a
+	ldi a, [hl]
+	ld e, a
+
+	pop af
+	pop bc
+	ld h, b
+	ld l, c
+	add hl, de
+
+	add a, 0xA4 ; find the right tile
+	ld [hl], a
+
+	pop de
+	pop hl
 	jp calculate_level_loop_resume
 
 ; calculate_level_laser_check_emitter: checks if the given tile is an emitter, and if so, begins calculating its path
@@ -488,22 +549,52 @@ calculate_level_laser_from_emitter_not_receptor:
 	call check_tile_is_solid_from_hl
 	jp z, calculate_level_laser_from_emitter_done ; it is solid, rip path
 
+	push af
+	; check if that tile is a piston arm
+	ld a, [hl]
+	ld e, 0
+	cp 0xA4
+	jp c, calculate_level_laser_from_emitter_not_piston_arm ; a < 0xA4
+	cp (0xAB + 1)
+	jp nc, calculate_level_laser_from_emitter_not_piston_arm ; a >= (0xAB + 1)
+	ld e, 6 ; it is, offset the laser tile selection
+calculate_level_laser_from_emitter_not_piston_arm:
 	; figure out what tile to place
+	ld a, e
+	add a, 0x1
+	ld e, a
 	bit 0, d
-	ld e, 0x1
 	jp z, calculate_level_laser_from_emitter_tile_loop_dir_done ; it's either up or down
-	ld e, 0x3
-
+	add a, 0x2
+	ld e, a
 calculate_level_laser_from_emitter_tile_loop_dir_done:
+	pop af
 	; it isn't solid, so set it to a laser and keep going
 	; but first check if it already is a laser, in which case we set it to the combo tile
-	bit 0, [hl]
-	jp nz, calculate_level_laser_from_emitter_tile_loop_dir_done_combo_laser ; the only non-solid tiles with bit 0 set are the laser ones
+	ld a, [hl]
+	cp 1
+	jp z, calculate_level_laser_from_emitter_tile_loop_dir_done_combo_laser
+	cp 3
+	jp z, calculate_level_laser_from_emitter_tile_loop_dir_done_combo_laser
+	cp 7
+	jp z, calculate_level_laser_from_emitter_tile_loop_dir_done_combo_laser
+	cp 9
+	jp z, calculate_level_laser_from_emitter_tile_loop_dir_done_combo_laser
 	ld a, e
 	ld [hl], a
 	jp calculate_level_laser_from_emitter_tile_loop
 calculate_level_laser_from_emitter_tile_loop_dir_done_combo_laser:
-	ld [hl], 5
+	ld a, [hl]
+	ld e, 5
+	; check if it's a secret piston arm
+	cp 7
+	jp c, calculate_level_laser_from_emitter_tile_loop_dir_done_combo_laser_not_piston ; a < 7
+	cp (9+1)
+	jp nc, calculate_level_laser_from_emitter_tile_loop_dir_done_combo_laser_not_piston ; a >= (9+1)
+	ld e, 11 ; it is
+calculate_level_laser_from_emitter_tile_loop_dir_done_combo_laser_not_piston:
+	ld a, e
+	ld [hl], a
 	jp calculate_level_laser_from_emitter_tile_loop
 
 calculate_level_laser_from_emitter_tile_loop_reflector:
