@@ -1,3 +1,48 @@
+; decompress_level: Decompresses the level pointed to by BC into the temp level buffer
+decompress_level:
+	; switch the ram to bank 1 (with the level buffer)
+	ld a, 1
+	ldh [SVBK], a
+
+	ld hl, temp_level_buffer
+
+decompress_level_loop:
+	ld a, [bc]
+	inc bc
+	cp 0xFF
+	jp z, load_level_from_temp_buffer ; end of level
+	bit 7, a
+	jp nz, decompress_level_decompress_stream
+	; it's just a single tile
+	cp 0
+	jp z, decompress_level_single_add_tile
+	add a, 0x7F
+decompress_level_single_add_tile:
+	ldi [hl], a
+	jp decompress_level_loop
+decompress_level_decompress_stream:
+	; it's a stream of multiple tiles
+	ld e, a
+	ld a, [bc] ; get the tile count
+	ld d, a
+	ld a, e
+
+	dec a
+	cp 0x7F
+	jp nz, decompress_level_decompress_stream_not_air
+	ld a, 0
+decompress_level_decompress_stream_not_air:
+
+	; a = tile
+	; d = tile count
+decompress_level_decompress_stream_loop:
+	ldi [hl], a
+	dec d
+	jp nz, decompress_level_decompress_stream_loop
+
+	inc bc
+	jp decompress_level_loop
+
 ; load_level: Loads the level pointed to by BC to tile map 1.
 load_level:
 	; switch the ram to bank 1 (with the level buffer)
@@ -14,7 +59,9 @@ load_level_to_temp_loop:
 	dec e
 	jp nz, load_level_to_temp_loop
 
+load_level_from_temp_buffer:
 	; copy the trigger table
+	ld hl, temp_level_triggertable_buffer
 	ld a, [bc] ; get its length first
 	add a, 2 ; add one to it so the length and entry count is copied too
 	ld d, a
@@ -342,6 +389,10 @@ calculate_level_lasers:
 	ld hl, calculate_level_laser_fix_pistons
 	call calculate_level_lasers_for_each
 
+	; for each lever, call laser_lever_trigger
+	ld hl, calculate_level_laser_check_lever
+	call calculate_level_lasers_for_each
+
 	; for each emitter, call calculate_level_laser_from_emitter
 	ld hl, calculate_level_laser_check_emitter
 	call calculate_level_lasers_for_each
@@ -459,6 +510,25 @@ calculate_level_laser_fix_pistons:
 
 	pop de
 	pop hl
+	jp calculate_level_loop_resume
+
+; calculate_level_laser_check_lever: checks if the given tile is a lever, and if so, triggers its target
+calculate_level_laser_check_lever:
+	ld a, [bc]
+
+	cp 0x9B
+	jp nz, calculate_level_laser_check_lever_done
+
+	push hl
+	ld h, b
+	ld l, c
+	ld a, 2
+	call player_trigger_tile
+	pop hl
+	ld a, 0x9B
+	ld [bc], a
+
+calculate_level_laser_check_lever_done:
 	jp calculate_level_loop_resume
 
 ; calculate_level_laser_check_emitter: checks if the given tile is an emitter, and if so, begins calculating its path
@@ -744,3 +814,6 @@ level_receptor_trigger:
 
 level_lever_trigger_done:
 	jp player_trigger_tile_entry_resume
+
+level_complete:
+	jp 0x150

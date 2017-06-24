@@ -105,6 +105,8 @@ player_trigger_tile:
 	ld a, [hl]
 	cp 0
 	jp z, player_trigger_tile_done ; it's air, just skip it entirely
+	cp 0x81
+	jp z, level_complete ; it's an exit door
 	; check if the tile is a receptor, 0x8A to 0x91 inclusive
 	cp 0x8A
 	jp c, player_trigger_tile_not_receptor ; a < 0x8A

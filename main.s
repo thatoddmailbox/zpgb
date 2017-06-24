@@ -67,8 +67,8 @@ main:
 	call selector_init
 
 	; Load level 
-	ld bc, level1
-	call load_level
+	ld bc, level1_comp
+	call decompress_level
 
 	; Set the background tile data
 	ld hl, bg_tile_data + 16
