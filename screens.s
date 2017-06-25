@@ -1,13 +1,18 @@
-load_screen_jump_table:
-	dw load_screen_menu
-	dw load_screen_level
-	dw load_screen_error
+screen_load_jump_table:
+	dw menu_load
+	dw game_load
 
-load_screen:
-	ld hl, load_screen_jump_table
-	ld b, 0
+screen_loop_jump_table:
+	dw menu_loop
+	dw game_loop
+
+screen_load:
+	call disable_lcd
+
+	ld hl, screen_load_jump_table
 	ld a, [current_screen]
-	add a, a ; double it because words are two bytes long
+	add a, a
+	ld b, 0
 	ld c, a
 	add hl, bc
 	ldi a, [hl]
@@ -17,33 +22,23 @@ load_screen:
 	ld h, d
 	ld l, e
 	jp [hl]
-load_screen_done:
+screen_load_done:
+	; enable screen with bg and window
+	ld hl, LCDC
+	ld [hl], 0b11100011
 	ret
 
-load_screen_menu:
-	jp load_screen_done
-
-load_screen_level:
-	; enable window for HUD
-	ld a, (144-16)
-	ldh [WY], a
-	ld a, 7
-	ldh [WX], a
-
-	; page in the palettes
-	ld a, 1
-	ldh [VBK], a
-
-	; set all of background 2 to palette 7
-	ld a, 0b00000111
-	ld hl, bg_tile_map_2
-	ld bc, (bg_tile_map_2 - bg_tile_map_1)
-	call clrmem
-
-	; page back in the tiles
-	ld a, 0
-	ldh [VBK], a
-	jp load_screen_done
-
-load_screen_error:
-	jp load_screen_done
+screen_loop:
+	ld hl, screen_loop_jump_table
+	ld a, [current_screen]
+	add a, a
+	ld b, 0
+	ld c, a
+	add hl, bc
+	ldi a, [hl]
+	ld e, a
+	ldi a, [hl]
+	ld d, a
+	ld h, d
+	ld l, e
+	jp [hl]

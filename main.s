@@ -190,121 +190,13 @@ reset_bg_palettes_loop:
 	ld [hl], 0b00000000 ; black
 	ld [hl], 0b00000000 ;
 
-	call load_screen
-
-	; Set LCDC (bit 7: operation on, bit 0: bg and win on)
-	ld hl, LCDC
-	ld [hl], 0b11100011
+	call screen_load
 
 	call hud_draw
 	call calc_viewport_scroll
 
 	ei
-loop:
-	; wait for vblank
-	ld a, 0b00000001
-	ldh [IE], a
-	halt
-	nop
-
-	ld a, [dialogue_active]
-	cp 1
-	jp nz, loop_normal
-	; if dialogue_active, then bypass the normal input and debug stuff
-	call dialogue_tick
-	jp loop
-loop_normal:
-	call hud_tick_early
-
-	; input
-	ld hl, P1
-	ld a, [last_p14]
-	ld c, a
-	ld a, [last_p15]
-	ld d, a
-
-	; pull p14 low
-	ld [hl], 0b00100000
-	; read d-pad input...twice
-	ld a, [hl]
-	ld a, [hl]
-
-	; pull p15 low
-	ld [hl], 0b00010000
-	; read other inputs (done six times, as programming manual states)
-	ld b, [hl]
-	ld b, [hl]
-	ld b, [hl]
-	ld b, [hl]
-	ld b, [hl]
-	ld b, [hl]
-
-	; reset the port
-	ld [hl], 0b00110000
-	
-	push bc
-	push de
-	ld d, a
-	ld a, [selector_mode]
-	cp 0
-	ld a, d
-	jp nz, read_input_p14_selector
-	; movement mode
-	; test d-pad inputs
-	bit 0, a
-	call z, move_right
-	bit 1, a
-	call z, move_left
-	bit 2, a
-	call z, move_up
-	bit 3, a
-	call z, move_down
-	jp read_input_p14_done
-read_input_p14_selector:
-	; selector mode
-	bit 0, a ; is the right button down?
-	jp nz, read_input_p14_selector_skip_right
-	bit 0, c ; was it up before?
-	ld d, 1
-	call nz, selector_move
-read_input_p14_selector_skip_right:
-	bit 1, a ; is the left button down?
-	jp nz, read_input_p14_done
-	bit 1, c ; was it up before?
-	ld d, 255
-	call nz, selector_move
-read_input_p14_done:
-	pop de
-	pop bc
-
-	; test other inputs
-	bit 0, b ; is the a button up now?
-	jp nz, read_input_skip_a
-	bit 0, d ; was it up before?
-	push bc
-	call nz, a_button
-	pop bc
-read_input_skip_a:
-	bit 1, b ; is the b button up now?
-	jp nz, read_input_skip_b
-	bit 1, d ; was it up before?
-	push bc
-	call nz, b_button
-	pop bc
-read_input_skip_b:
-	; save this frame's input
-	ld [last_p14], a
-	ld a, b
-	ld [last_p15], a
-
-	; if we're in selection mode, animate the thingies
-	ld a, [selector_mode]
-	cp 0
-	jp z, loop_not_selector_mode
-	call selector_tick
-loop_not_selector_mode:
-	call hud_tick_late
-	jp loop
+	jp screen_loop
 
 .incasm "screens.s"
 .incasm "level.s"
@@ -312,6 +204,8 @@ loop_not_selector_mode:
 .incasm "selector.s"
 .incasm "dialogue.s"
 .incasm "hud.s"
+.incasm "game.s"
+.incasm "menu.s"
 
 a_button:
 	ld a, [selector_mode]
@@ -483,6 +377,11 @@ strcpy:
 
 ; disable_lcd: waits for vblank/scanline 145, then disables the lcd
 disable_lcd:
+	; if the screen is already off, then just return
+	ldh a, [LCDC]
+	cp 0
+	ret z
+
 	; wait for LY to be >= 145 (vblank)
 	; for some reason, bgb doesn't like wait_for_vblank for this,
 	; and claims we're trying to disable the lcd outside of vblank
