@@ -23,9 +23,6 @@ screen_load:
 	ld l, e
 	jp [hl]
 screen_load_done:
-	; enable screen with bg and window
-	ld hl, LCDC
-	ld [hl], 0b11100011
 	ret
 
 screen_loop:

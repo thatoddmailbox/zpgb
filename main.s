@@ -37,7 +37,7 @@ main:
 	ld [frame_counter], a
 	ld [last_p14], a
 	ld [last_p15], a
-	ld a, 1
+	ld a, 0
 	ld [current_screen], a
 	ld a, 8
 	ld [player_x], a
@@ -66,6 +66,7 @@ main:
 
 	call dialogue_init
 	call hud_init
+	call menu_init
 	call selector_init
 
 	; Load level 
@@ -192,9 +193,6 @@ reset_bg_palettes_loop:
 
 	call screen_load
 
-	call hud_draw
-	call calc_viewport_scroll
-
 	ei
 	jp screen_loop
 
@@ -206,96 +204,6 @@ reset_bg_palettes_loop:
 .incasm "hud.s"
 .incasm "game.s"
 .incasm "menu.s"
-
-a_button:
-	ld a, [selector_mode]
-	cp 0
-	jp nz, a_button_selector_mode
-a_button_movement_mode:
-	ld a, 0
-	call player_trigger
-	ret
-a_button_selector_mode:
-	call selector_select
-	ret
-
-b_button:
-	ld a, [selector_mode]
-	cp 0
-	jp nz, b_button_selector_mode
-b_button_movement_mode:
-	call selector_start_selecting
-	ld a, 1
-	call player_trigger
-	; check if we actually found anything
-	ld a, [selector_found_count]
-	cp 0
-	jp z, b_button_movement_mode_done
-	ld a, 1
-	ld [selector_mode], a
-	call selector_set_sprites
-b_button_movement_mode_done:
-	ret
-b_button_selector_mode:
-	; disable selector mode
-	ld a, 0
-	ld [selector_mode], a
-	; reset current info
-	call selector_start_selecting
-	call selector_set_sprites
-	ret
-
-move_up:
-	push af
-	ld a, [player_y]
-	dec a
-	ld b, a
-	ld a, [player_x]
-	ld c, a
-	call check_for_collision
-	jp z, move_done
-	ld hl, player_y
-	dec [hl]
-	jp move_done
-move_down:
-	push af
-	ld a, [player_y]
-	inc a
-	ld b, a
-	ld a, [player_x]
-	ld c, a
-	call check_for_collision
-	jp z, move_done
-	ld hl, player_y
-	inc [hl]
-	jp move_done
-move_left:
-	push af
-	ld a, [player_y]
-	ld b, a
-	ld a, [player_x]
-	dec a
-	ld c, a
-	call check_for_collision
-	jp z, move_done
-	ld hl, player_x
-	dec [hl]
-	jp move_done
-move_right:
-	push af
-	ld a, [player_y]
-	ld b, a
-	ld a, [player_x]
-	inc a
-	ld c, a
-	call check_for_collision
-	jp z, move_done
-	ld hl, player_x
-	inc [hl]
-move_done:
-	call calc_viewport_scroll
-	pop af
-	ret
 
 ; wait_for_vblank: Waits for vblank.
 wait_for_vblank:

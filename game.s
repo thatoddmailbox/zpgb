@@ -21,6 +21,12 @@ game_load:
 	ld a, 0
 	ldh [VBK], a
 
+	ld a, 0b11100011 ; enable window
+	ldh [LCDC], a
+
+	call hud_draw
+	call calc_viewport_scroll
+
 	jp screen_load_done
 
 game_loop:
@@ -128,3 +134,94 @@ game_read_input_skip_b:
 game_loop_not_selector_mode:
 	call hud_tick_late
 	jp game_loop
+
+
+a_button:
+	ld a, [selector_mode]
+	cp 0
+	jp nz, a_button_selector_mode
+a_button_movement_mode:
+	ld a, 0
+	call player_trigger
+	ret
+a_button_selector_mode:
+	call selector_select
+	ret
+
+b_button:
+	ld a, [selector_mode]
+	cp 0
+	jp nz, b_button_selector_mode
+b_button_movement_mode:
+	call selector_start_selecting
+	ld a, 1
+	call player_trigger
+	; check if we actually found anything
+	ld a, [selector_found_count]
+	cp 0
+	jp z, b_button_movement_mode_done
+	ld a, 1
+	ld [selector_mode], a
+	call selector_set_sprites
+b_button_movement_mode_done:
+	ret
+b_button_selector_mode:
+	; disable selector mode
+	ld a, 0
+	ld [selector_mode], a
+	; reset current info
+	call selector_start_selecting
+	call selector_set_sprites
+	ret
+
+move_up:
+	push af
+	ld a, [player_y]
+	dec a
+	ld b, a
+	ld a, [player_x]
+	ld c, a
+	call check_for_collision
+	jp z, move_done
+	ld hl, player_y
+	dec [hl]
+	jp move_done
+move_down:
+	push af
+	ld a, [player_y]
+	inc a
+	ld b, a
+	ld a, [player_x]
+	ld c, a
+	call check_for_collision
+	jp z, move_done
+	ld hl, player_y
+	inc [hl]
+	jp move_done
+move_left:
+	push af
+	ld a, [player_y]
+	ld b, a
+	ld a, [player_x]
+	dec a
+	ld c, a
+	call check_for_collision
+	jp z, move_done
+	ld hl, player_x
+	dec [hl]
+	jp move_done
+move_right:
+	push af
+	ld a, [player_y]
+	ld b, a
+	ld a, [player_x]
+	inc a
+	ld c, a
+	call check_for_collision
+	jp z, move_done
+	ld hl, player_x
+	inc [hl]
+move_done:
+	call calc_viewport_scroll
+	pop af
+	ret
