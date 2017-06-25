@@ -11,6 +11,7 @@
 .incasm "charset.s"
 .incasm "tileset.s"
 .incasm "levels.s"
+.incasm "text.s"
 
 dma_activate:
 	ld a, oam_data_bank
@@ -36,7 +37,6 @@ main:
 	ld [frame_counter], a
 	ld [last_p14], a
 	ld [last_p15], a
-	ld [num_buf], a
 	ld a, 1
 	ld [current_screen], a
 	ld a, 8
@@ -64,6 +64,8 @@ main:
 	ld bc, sprite_ram_len
 	call clrmem
 
+	call dialogue_init
+	call hud_init
 	call selector_init
 
 	; Load level 
@@ -189,6 +191,7 @@ reset_bg_palettes_loop:
 	ld hl, LCDC
 	ld [hl], 0b11100011
 
+	call hud_draw
 	call calc_viewport_scroll
 
 	ei
@@ -199,9 +202,14 @@ loop:
 	halt
 	nop
 
-	ld bc, num_buf
-	ld hl, bg_tile_map_2
-	call strcpy
+	ld a, [dialogue_active]
+	cp 1
+	jp nz, loop_normal
+	; if dialogue_active, then bypass the normal input and debug stuff
+	call dialogue_tick
+	jp loop
+loop_normal:
+	call hud_tick_early
 
 	; input
 	ld hl, P1
@@ -290,34 +298,15 @@ read_input_skip_b:
 	jp z, loop_not_selector_mode
 	call selector_tick
 loop_not_selector_mode:
-
-	; print debug info
-	ld hl, num_buf
-
-	ld a, [player_x]
-	call print_num
-	ld a, '-'
-	ldi [hl], a
-	ld a, [player_y]
-	call print_num
-	ld a, '-'
-	ldi [hl], a
-	ld a, [last_p15]
-	call print_num
-	ld a, '-'
-	ldi [hl], a
-	ld a, [selector_select_index]
-	call print_num
-
-	ld a, 0
-	ldi [hl], a
-
+	call hud_tick_late
 	jp loop
 
 .incasm "screens.s"
 .incasm "level.s"
 .incasm "player.s"
 .incasm "selector.s"
+.incasm "dialogue.s"
+.incasm "hud.s"
 
 a_button:
 	ld a, [selector_mode]
@@ -412,8 +401,15 @@ move_done:
 ; wait_for_vblank: Waits for vblank.
 wait_for_vblank:
 	ldh a, [STAT]
-	bit 1, a
+	bit 0, a
 	jp nz, wait_for_vblank
+	ret
+
+; wait_for_vblank_ly: Waits for vblank by polling LY.
+wait_for_vblank_ly:
+	ldh a, [LY]
+	cp 145
+	jp c, wait_for_vblank_ly
 	ret
 
 ; print_num: Prints the number in A as a string to HL.
@@ -453,6 +449,19 @@ memcpy:
 	ldi [hl], a
 	dec d
 	jp nz, memcpy
+	ret
+
+; vmemset: Clears the block of VRAM pointed to by BC with the value of A for D times.
+vmemset:
+	ld e, a
+	ldh a, [LY]
+	cp 145
+	call c, wait_for_vblank_ly
+	ld a, e
+	ld [bc], a
+	inc bc
+	dec d
+	jp nz, vmemset
 	ret
 
 ; strcpy: Copies the null-terminated string pointed to in BC to HL.

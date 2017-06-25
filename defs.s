@@ -12,6 +12,7 @@
 .def LEVEL_TILE_COUNT (VRAM_WIDTH_TILES*VRAM_HEIGHT_TILES)
 
 .def HUD_HEIGHT_PX 16
+.def DIALOGUE_HEIGHT_PX (8*4)
 
 ; hardware registers
 .def P1 0xFF00
@@ -65,7 +66,10 @@
 .def selector_select_index (ram_fixed_start+7)
 .def selector_found_count (ram_fixed_start+8)
 .def selector_frame_counter (ram_fixed_start+9)
-.def num_buf (ram_fixed_start+10)
+.def dialogue_active (ram_fixed_start+10)
+.def dialogue_script_pointer_l (ram_fixed_start+11)
+.def dialogue_script_pointer_h (ram_fixed_start+12)
+.def num_buf (ram_fixed_start+20)
 
 .def selector_select_table (ram_fixed_start+0x100)
 

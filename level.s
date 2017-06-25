@@ -815,5 +815,10 @@ level_receptor_trigger:
 level_lever_trigger_done:
 	jp player_trigger_tile_entry_resume
 
+level_sign_trigger:
+	ld hl, script_test
+	call dialogue_start_script
+	jp player_trigger_tile_entry_resume
+
 level_complete:
 	jp 0x150
