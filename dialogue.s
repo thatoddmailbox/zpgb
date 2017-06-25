@@ -4,6 +4,7 @@ dialogue_init:
 	ld [dialogue_active], a
 	ld [dialogue_script_pointer_l], a
 	ld [dialogue_script_pointer_h], a
+	ld [dialogue_frame_counter], a
 	ret
 
 ; dialogue_start_script: Starts displaying the script pointed to by HL.
@@ -45,6 +46,31 @@ dialogue_start_script_wy_loop_end:
 
 ; dialogue_write_into_box: Writes the line pointed to by HL into the dialogue box.
 dialogue_write_into_box:
+	; clear the previous character
+	ld bc, bg_tile_map_2
+	ld a, 0x09
+	ld d, SCREEN_WIDTH_TILES
+	call vmemset
+
+	; get a pointer to the character in the character table
+	ldi a, [hl]
+	dec a
+	sla a
+	sla a
+	sla a
+	push hl
+	ld hl, dialogue_character_table
+	ld b, 0
+	ld c, a
+	add hl, bc
+	; hl now contains a memory address to the character's name
+	ld b, h
+	ld c, l
+	ld hl, (bg_tile_map_2 + 1)
+	call wait_for_vblank_ly
+	call strcpy
+	pop hl
+
 	ld bc, (bg_tile_map_2 + 32 + 1)
 	ld d, (SCREEN_WIDTH_TILES - 2) ; tiles left on first line
 	ld e, 2*(SCREEN_WIDTH_TILES - 2) ; tiles left to end
@@ -162,4 +188,27 @@ dialogue_tick_skip_a:
 	ld a, b
 	ld [last_p15], a
 
+	; blink the a button
+	ld a, [dialogue_frame_counter]
+	inc a
+	ld [dialogue_frame_counter], a
+
+	bit 5, a
+	jp z, dialogue_tick_skip_anim
+	ld a, 0
+	ld [dialogue_frame_counter], a
+
+	ld hl, (bg_tile_map_2 + 32 + 32 + 32 + SCREEN_WIDTH_TILES - 1)
+	ld a, [hl]
+	cpl
+	ld [hl], a
+dialogue_tick_skip_anim:
 	ret
+
+dialogue_character_table:
+	ascii "???"
+	db 0x00, 0x00, 0x00, 0x00, 0x00
+	ascii "Zala"
+	db 0x00, 0x00, 0x00, 0x00
+	ascii "Ducky"
+	db 0x00, 0x00, 0x00

@@ -69,6 +69,7 @@
 .def dialogue_active (ram_fixed_start+10)
 .def dialogue_script_pointer_l (ram_fixed_start+11)
 .def dialogue_script_pointer_h (ram_fixed_start+12)
+.def dialogue_frame_counter (ram_fixed_start+13)
 .def num_buf (ram_fixed_start+20)
 
 .def selector_select_table (ram_fixed_start+0x100)

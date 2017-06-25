@@ -100,6 +100,11 @@ main:
 	ld d, ((sharedset_end - sharedset) - (255*2))
 	call memcpy
 
+	ld hl, (bg_tile_data - (endset_end - endset))
+	ld bc, endset
+	ld d, (endset_end - endset)
+	call memcpy
+
 	; Set the sprite tile data
 	ld hl, sprite_tile_data
 	ld bc, spriteset
@@ -152,10 +157,10 @@ reset_bg_palettes_loop:
 	; BG 7
 	ld [hl], 0b11111111 ; white
 	ld [hl], 0b01111111
-	ld [hl], 0b00000000 ; black
-	ld [hl], 0b00000000
-	ld [hl], 0b00000000 ; black
-	ld [hl], 0b00000000
+	ld [hl], 0b01001010 ; light gray
+	ld [hl], 0b00101001
+	ld [hl], 0b10000100 ; dark gray
+	ld [hl], 0b00010000
 	ld [hl], 0b00000000 ; black
 	ld [hl], 0b00000000
 
