@@ -398,6 +398,9 @@ calculate_level_lasers:
 	call calculate_level_lasers_for_each
 
 	; update the VRAM
+	ldh a, [LCDC]
+	cp 0
+	jp z, copy_temp_level_buffer_to_bg ; screen is off, don't bother waiting for vblank
 	ld a, 0b00000001
 	ldh [IE], a
 	halt

@@ -7,6 +7,7 @@ screen_loop_jump_table:
 	dw game_loop
 
 screen_load:
+	push bc
 	call disable_lcd
 
 	ld hl, screen_load_jump_table
@@ -21,6 +22,8 @@ screen_load:
 	ld d, a
 	ld h, d
 	ld l, e
+
+	pop bc
 	jp [hl]
 screen_load_done:
 	ret

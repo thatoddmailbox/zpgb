@@ -5,6 +5,16 @@ game_load:
 	ld a, 7
 	ldh [WX], a
 
+	; decompress the level passed in bc
+	call decompress_level
+	
+
+	; clear the hud window
+	ld hl, bg_tile_map_2
+	ld a, 0x00
+	ld bc, (VRAM_WIDTH_TILES*4)
+	call clrmem
+
 	; page in the palettes
 	ld a, 1
 	ldh [VBK], a

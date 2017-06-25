@@ -37,7 +37,6 @@ main:
 	ld [frame_counter], a
 	ld [last_p14], a
 	ld [last_p15], a
-	ld a, 0
 	ld [current_screen], a
 	ld a, 8
 	ld [player_x], a
@@ -68,10 +67,6 @@ main:
 	call hud_init
 	call menu_init
 	call selector_init
-
-	; Load level 
-	ld bc, level1_comp
-	call decompress_level
 
 	; Set the background tile data
 	ld hl, bg_tile_data + 16
