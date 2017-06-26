@@ -38,9 +38,6 @@ main:
 	ld [last_p14], a
 	ld [last_p15], a
 	ld [current_screen], a
-	ld a, 8
-	ld [player_x], a
-	ld [player_y], a
 
 	; Copy the DMA wait code into the CPU internal RAM
 	ld hl, dma_code_highram
@@ -67,6 +64,7 @@ main:
 	call hud_init
 	call menu_init
 	call selector_init
+	call prog_init
 
 	; Set the background tile data
 	ld hl, bg_tile_data + 16
@@ -199,6 +197,7 @@ reset_bg_palettes_loop:
 .incasm "hud.s"
 .incasm "game.s"
 .incasm "menu.s"
+.incasm "prog.s"
 
 ; wait_for_vblank: Waits for vblank.
 wait_for_vblank:

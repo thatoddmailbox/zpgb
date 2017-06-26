@@ -72,6 +72,7 @@
 .def dialogue_frame_counter (ram_fixed_start+13)
 .def menu_selection (ram_fixed_start+14)
 .def menu_frame_counter (ram_fixed_start+15)
+.def prog_current_level (ram_fixed_start+16)
 .def num_buf (ram_fixed_start+20)
 
 .def selector_select_table (ram_fixed_start+0x100)

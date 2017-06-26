@@ -196,11 +196,9 @@ menu_select_option:
 
 ; menu_new_game: Handles starting a new game.
 menu_new_game:
-	ld a, 1
-	ld [current_screen], a
-	ld bc, level1_comp
-	call screen_load
-	jp screen_loop
+	ld a, 0
+	ld [prog_current_level], a
+	jp prog_load_current_level
 
 ; menu_continue_game: Handles continuing a game from a password.
 menu_continue_game:

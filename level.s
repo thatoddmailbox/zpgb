@@ -824,4 +824,4 @@ level_sign_trigger:
 	jp player_trigger_tile_entry_resume
 
 level_complete:
-	jp 0x150
+	jp prog_advance_level

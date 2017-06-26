@@ -5,9 +5,13 @@ game_load:
 	ld a, 7
 	ldh [WX], a
 
+	; move player to start
+	ld a, 8
+	ld [player_x], a
+	ld [player_y], a
+
 	; decompress the level passed in bc
 	call decompress_level
-	
 
 	; clear the hud window
 	ld hl, bg_tile_map_2
