@@ -819,7 +819,14 @@ level_lever_trigger_done:
 	jp player_trigger_tile_entry_resume
 
 level_sign_trigger:
-	ld hl, script_test
+	; get the target script
+	ld h, d
+	ld l, e
+	ldi a, [hl]
+	ld d, a
+	ldi a, [hl]
+	ld h, a
+	ld l, d
 	call dialogue_start_script
 	jp player_trigger_tile_entry_resume
 

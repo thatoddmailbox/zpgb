@@ -1,8 +1,10 @@
-.def LEVEL_COUNT 2
+.def LEVEL_COUNT 4
 
 prog_level_table:
 	dw level1
 	dw level2
+	dw level3
+	dw level99
 
 ; prog_init: Initializes variables and memory related to the level progression handler.
 prog_init:
