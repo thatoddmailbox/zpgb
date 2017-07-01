@@ -154,8 +154,12 @@ dialogue_complete_wy_loop_end:
 	ld a, 0
 	ld [dialogue_active], a
 
+	; check what's currently open
+	ld a, [current_screen]
+	cp SCREEN_STORY
+	jp z, story_dialogue_complete
+	; it's not the story, so just draw the hud and be happy
 	call hud_draw
-
 	ret
 
 ; dialogue_tick: Handles input and things like that, only called when dialogue_active is 1.

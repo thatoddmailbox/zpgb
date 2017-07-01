@@ -14,11 +14,6 @@ menu_init:
 	ret
 
 menu_load:
-	; disable window
-	ld a, 0
-	ldh [WX], a
-	ldh [WY], a
-
 	; palette mode
 	ld a, 1
 	ldh [VBK], a
@@ -196,9 +191,12 @@ menu_select_option:
 
 ; menu_new_game: Handles starting a new game.
 menu_new_game:
-	ld a, 0
-	ld [prog_current_level], a
-	jp prog_load_current_level
+	; start the story
+	ld a, 2
+	ld [current_screen], a
+
+	call screen_load
+	jp screen_loop
 
 ; menu_continue_game: Handles continuing a game from a password.
 menu_continue_game:

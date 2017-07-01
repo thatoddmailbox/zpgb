@@ -14,6 +14,10 @@
 .def HUD_HEIGHT_PX 16
 .def DIALOGUE_HEIGHT_PX (8*4)
 
+.def SCREEN_MENU 0
+.def SCREEN_GAME 1
+.def SCREEN_STORY 2
+
 ; hardware registers
 .def P1 0xFF00
 .def LCDC 0xFF40

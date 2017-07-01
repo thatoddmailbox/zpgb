@@ -1,6 +1,6 @@
 game_load:
 	; enable window for HUD
-	ld a, (144-16)
+	ld a, (SCREEN_HEIGHT_PX-HUD_HEIGHT_PX)
 	ldh [WY], a
 	ld a, 7
 	ldh [WX], a

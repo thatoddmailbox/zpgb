@@ -198,6 +198,7 @@ reset_bg_palettes_loop:
 .incasm "game.s"
 .incasm "menu.s"
 .incasm "prog.s"
+.incasm "story.s"
 
 ; wait_for_vblank: Waits for vblank.
 wait_for_vblank:

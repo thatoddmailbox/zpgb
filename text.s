@@ -1,3 +1,44 @@
+; story start
+script_story_start:
+	db 0x03
+	ascii "This is a pretty  "
+	asciz "bad waiting room."
+
+	db 0x03
+	ascii "Apparently paying "
+	asciz "for electricity"
+
+	db 0x03
+	asciz "was 'unneeded'..."
+
+	db 0x03
+	asciz "Except..."
+
+	db 0x03
+	ascii "...this place uses"
+	asciz "electric doors..."
+
+	db 0x03
+	ascii "...that, when not "
+	asciz "powered, open..."
+
+	db 0x03
+	ascii "...and I think I  "
+	asciz "see a door right"
+
+	db 0x03
+	asciz "here..."
+
+	db 0x03
+	ascii "I guess I should  "
+	asciz "go through."
+
+	db 0x03
+	ascii "What's the worst  "
+	asciz "that could happen?"
+
+	db 0x00
+
 ; level 1 dialogue
 script_level1_welcome:
 	db 0x02
@@ -19,6 +60,16 @@ script_level1_welcome:
 	db 0x02
 	ascii "Please proceed to "
 	asciz "the exit door."
+
+	db 0x03
+	asciz "More puzzles?"
+
+	db 0x03
+	ascii "How many puzzles  "
+	asciz "can there possibly"
+
+	db 0x03
+	ascii "be?"
 
 	asciz ""
 
@@ -46,6 +97,20 @@ script_level2_start:
 	db 0x02
 	ascii "define the word   "
 	asciz "'harmless')"
+
+	db 0x02
+	ascii "We call this      "
+	asciz "technology NoHurt."
+
+	db 0x02
+	ascii "(trademark is     "
+	asciz "pending, please do"
+
+	db 0x02
+	ascii "steal our amazing "
+	ascii "name. "
+	db 0x04
+	asciz ")"
 
 	asciz ""
 
