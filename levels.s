@@ -83,8 +83,12 @@ level99:
 	db 0xff
 
 level99_triggertable:
-	db 36
-	db 6
+	db 42
+	db 7
+
+	dw (temp_level_buffer + 0x000)
+	dw level_sign_trigger
+	dw script_test
 
 	dw (temp_level_buffer + 0x041)
 	dw level_terminal_trigger

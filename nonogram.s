@@ -306,6 +306,13 @@ nonogram_restore_game:
 	ld a, 0b11100011 ; enable window
 	ldh [LCDC], a
 
+	call calc_viewport_scroll
+
+	; special hardcoded trigger for nonogram end
+	ld hl, temp_level_buffer
+	ld a, 3
+	call player_trigger_tile
+
 	; return to the game loop
 	ret
 
@@ -452,6 +459,41 @@ nonogram_a_button_current_done:
 	ld a, b
 	ld [hl], a
 
+	pop de
+	pop bc
+
+	; fallthrough to nonogram_check_for_solution
+
+; nonogram_check_for_solution: Checks if the player found the solution.
+nonogram_check_for_solution:
+	push bc
+	push de
+
+	ld a, [nonogram_pointer_h]
+	ld h, a
+	ld a, [nonogram_pointer_l]
+	ld l, a
+	ld bc, nonogram_state
+	ld d, 8
+
+	; hl = solution, bc = current state
+
+nonogram_check_for_solution_loop:
+	ld a, [bc] ; get current row
+	cp [hl] ; compare to solution row
+	jp nz, nonogram_check_for_solution_fail ; fail on difference
+	; loop
+	inc bc
+	inc hl
+	dec d
+	jp nz, nonogram_check_for_solution_loop
+
+	; if we made it here, it must be correct
+	pop de
+	pop bc
+	jp nonogram_restore_game
+
+nonogram_check_for_solution_fail:
 	pop de
 	pop bc
 	ret

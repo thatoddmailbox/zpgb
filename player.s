@@ -107,6 +107,16 @@ player_trigger_tile:
 	jp z, player_trigger_tile_done ; it's air, just skip it entirely
 	cp 0x81
 	jp z, level_complete ; it's an exit door
+	; check if the tile is a wall, 0x80
+	cp 0x80
+	jp nz, player_trigger_tile_not_wall
+	; it is a wall, so check if we're in the nonogram mode
+	ld e, a
+	ld a, d
+	cp 3
+	jp nz, player_trigger_tile_done ; no we're not, so scram
+	ld a, e
+player_trigger_tile_not_wall:
 	; check if the tile is a receptor, 0x8A to 0x91 inclusive
 	cp 0x8A
 	jp c, player_trigger_tile_not_receptor ; a < 0x8A
