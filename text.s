@@ -39,12 +39,47 @@ script_story_start:
 
 	db 0x00
 
-; level 1 dialogue
-script_level1_welcome:
-	db 0x02
-	ascii "Welcome to puzzle "
-	asciz "course 47."
+; ==================
+; ==================
+; INTRO
+; ==================
+; ==================
+script_intro_level1_start:
+	db 0x05
+	ascii "Hello, and welcome"
+	asciz "to the Automated  "
 
+	db 0x05
+	ascii "Puzzle System. The"
+	asciz "System is still"
+
+	db 0x05
+	ascii "under heavy       "
+	asciz "development, and  "
+
+	db 0x05
+	ascii "so should not yet "
+	asciz "be used by"
+
+	db 0x05
+	ascii "the public. If you"
+	asciz "are not authorized"
+
+	db 0x05
+	ascii "to access this    "
+	asciz "System, please"
+
+	db 0x05
+	ascii "go back through   "
+	asciz "the one-way door"
+
+	db 0x05
+	ascii "that brought you  "
+	asciz "here."
+
+	asciz ""
+
+script_intro_level1_sign:
 	db 0x02
 	ascii "This part of the  "
 	asciz "course will help"
@@ -66,15 +101,11 @@ script_level1_welcome:
 
 	db 0x03
 	ascii "How many puzzles  "
-	asciz "can there possibly"
-
-	db 0x03
-	ascii "be?"
+	asciz "can there be?"
 
 	asciz ""
 
-; level 2 dialogue
-script_level2_start:
+script_intro_level2_sign:
 	db 0x02
 	ascii "Regulations demand"
 	asciz "that we inform you"
@@ -114,8 +145,7 @@ script_level2_start:
 
 	asciz ""
 
-; level 3 dialogue
-script_level3_start:
+script_intro_level3_sign:
 	db 0x02
 	ascii "Some things can be"
 	asciz "rotated."
@@ -145,6 +175,71 @@ script_level3_start:
 
 	asciz ""
 
+; ==================
+; ==================
+; MIDDLE PART
+; ==================
+; ==================
+
+
+; ==================
+; ==================
+; SURFACE PART
+; ==================
+; ==================
+script_surface_level1_start:
+	db 0x05
+	ascii "Thank you for your"
+	asciz "participation in"
+
+	db 0x05
+	ascii "our puzzles. This "
+	asciz "concludes all of  "
+
+	db 0x05
+	ascii "the puzzles that  "
+	asciz "are available to  "
+
+	db 0x05
+	ascii "you in this       "
+	asciz "building. Please  "
+
+	db 0x05
+	ascii "wait here. At some"
+	asciz "point, you will be"
+
+	db 0x05
+	ascii "given further     "
+	asciz "instructions."
+
+	db 0x05
+	ascii "Under absolutely  "
+	asciz "no circumstances"
+
+	db 0x05
+	ascii "should you proceed"
+	asciz "towards the exit  "
+
+	db 0x05
+	ascii "door directly in  "
+	asciz "front of you."
+
+	db 0x05
+	ascii "Thank you for your"
+	asciz "understanding."
+
+	db 0x03
+	asciz "...uh."
+
+	db 0x03
+	ascii "I guess that means"
+	asciz "I should go to the"
+
+	db 0x03
+	asciz "exit then."
+
+	asciz ""
+
 script_test:
 	db 0x01
 	ascii "Hello! This is    "
@@ -165,3 +260,4 @@ script_test:
 	asciz "dialogue now..."
 
 	asciz ""
+

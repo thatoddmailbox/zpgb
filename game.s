@@ -41,6 +41,11 @@ game_load:
 	call hud_draw
 	call calc_viewport_scroll
 
+	; special level start trigger
+	ld hl, (temp_level_buffer + 1)
+	ld a, 3
+	call player_trigger_tile
+
 	jp screen_load_done
 
 game_loop:
