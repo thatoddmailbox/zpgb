@@ -50,6 +50,9 @@ game_loop:
 	halt
 	nop
 
+	ld a, [nonogram_active]
+	cp 1
+	jp z, nonogram_tick ; if the nonogram's open, bypass everything else
 	ld a, [dialogue_active]
 	cp 1
 	jp nz, game_loop_normal

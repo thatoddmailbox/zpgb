@@ -450,6 +450,8 @@ calculate_level_laser_clear_tile:
 	jp z, calculate_level_loop_resume
 	cp 0x9B
 	jp z, calculate_level_loop_resume
+	cp 0xAD
+	jp z, calculate_level_loop_resume
 
 	; are you the horizontal laser, which goes from 0x3 -> 0x0?
 	cp 0x3
@@ -828,6 +830,11 @@ level_sign_trigger:
 	ld h, a
 	ld l, d
 	call dialogue_start_script
+	jp player_trigger_tile_entry_resume
+
+level_terminal_trigger:
+	ld hl, ngram1
+	call nonogram_start_puzzle
 	jp player_trigger_tile_entry_resume
 
 level_complete:

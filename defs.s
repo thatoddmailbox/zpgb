@@ -77,7 +77,16 @@
 .def menu_selection (ram_fixed_start+14)
 .def menu_frame_counter (ram_fixed_start+15)
 .def prog_current_level (ram_fixed_start+16)
-.def num_buf (ram_fixed_start+20)
+.def nonogram_active (ram_fixed_start+17)
+.def nonogram_pointer_l (ram_fixed_start+18)
+.def nonogram_pointer_h (ram_fixed_start+19)
+.def nonogram_width (ram_fixed_start+20)
+.def nonogram_height (ram_fixed_start+21)
+.def nonogram_cursor_x (ram_fixed_start+22)
+.def nonogram_cursor_y (ram_fixed_start+23)
+.def nonogram_instruction_buffer (ram_fixed_start+24) ; 8 chars long
+.def nonogram_state (ram_fixed_start+32) ; 8 bytes long
+.def num_buf (ram_fixed_start+40)
 
 .def selector_select_table (ram_fixed_start+0x100)
 
@@ -91,6 +100,10 @@
 .def sprite1_x (oam_data+(0x4*1)+1)
 .def sprite1_t (oam_data+(0x4*1)+2)
 .def sprite1_a (oam_data+(0x4*1)+3)
+.def sprite2_y (oam_data+(0x4*2)+0)
+.def sprite2_x (oam_data+(0x4*2)+1)
+.def sprite2_t (oam_data+(0x4*2)+2)
+.def sprite2_a (oam_data+(0x4*2)+3)
 .def spritets0_y (oam_data+(0x4*29)+0)
 .def spritets0_x (oam_data+(0x4*29)+1)
 .def spritets0_t (oam_data+(0x4*29)+2)

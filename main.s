@@ -1,6 +1,18 @@
 ; Zum Puzzler Gameboy
 ; yay
 
+; outline:
+; * Story: scene in waiting room, leaves
+; * Game: first part, "intro"
+;   5 levels
+; * Game: intermediate part, still rotations and stuff
+;   5-7 levels (add more if possible)
+; * Game: warning that you're close to surface
+;   1-2 levels like before
+;   "dead end" that can be hacked
+;   more dumb hacking puzzles
+; * Story: end thing that has her go to ultimate hq of doom
+
 .incasm "defs.s"
 
 ; interrupts and stuff
@@ -10,6 +22,7 @@
 .org 0x4000
 .incasm "charset.s"
 .incasm "tileset.s"
+.incasm "ngrams.s"
 .incasm "levels.s"
 .incasm "text.s"
 
@@ -199,6 +212,7 @@ reset_bg_palettes_loop:
 .incasm "menu.s"
 .incasm "prog.s"
 .incasm "story.s"
+.incasm "nonogram.s"
 
 ; wait_for_vblank: Waits for vblank.
 wait_for_vblank:
@@ -277,6 +291,22 @@ strcpy:
 		jp strcpy_loop
 	strcpy_end:
 		ret
+
+; strlen: Calculates the length of the string pointed to by DE and saves it to A.
+strlen:
+	ld a, 0
+strlen_loop:
+	push af
+	ld a, [de]
+	inc de
+	cp 0
+	jp z, strlen_end
+	pop af
+	inc a
+	jp strlen_loop
+strlen_end:
+	pop af
+	ret
 
 ; disable_lcd: waits for vblank/scanline 145, then disables the lcd
 disable_lcd:
