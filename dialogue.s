@@ -94,6 +94,7 @@ dialogue_write_into_box_loop_fill:
 	ld a, e
 	cp 0
 	jp z, dialogue_write_into_box_loop_end
+	call wait_for_vblank_ly
 	ld a, 0
 dialogue_write_into_box_loop_fill_loop:
 	ld [bc], a

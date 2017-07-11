@@ -200,7 +200,7 @@ menu_new_game:
 
 ; menu_continue_game: Handles continuing a game from a password.
 menu_continue_game:
-	ld a, 3
+	ld a, 10
 	ld [prog_current_level], a
 	jp prog_load_current_level
 

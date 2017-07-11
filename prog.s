@@ -1,14 +1,22 @@
-.def LEVEL_COUNT 4
+.def LEVEL_COUNT 12
 
 prog_level_table:
 	; INTRO PART
 	dw intro_level1
 	dw intro_level2
 	dw intro_level3
+	dw intro_level4
 
 	; MIDDLE PART
+	dw middle_level1
+	dw middle_level2
+	dw middle_level3
+	dw middle_level4
+	dw middle_level5
+	dw middle_level6
+	dw middle_level7
 
-	; SURFACE PARTs
+	; SURFACE PART
 
 	dw level99
 

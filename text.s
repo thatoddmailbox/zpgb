@@ -180,7 +180,53 @@ script_intro_level3_sign:
 ; MIDDLE PART
 ; ==================
 ; ==================
+script_middle_level1_start:
+	db 0x05
+	ascii "This concludes the"
+	asciz "introduction to"
 
+	db 0x05
+	asciz "DuckLabs puzzles."
+
+	db 0x05
+	ascii "From this point   "
+	asciz "forwards, all"
+
+	db 0x05
+	ascii "dialogue will be  "
+	asciz "kept at the"
+
+	db 0x05
+	ascii "minimum level     "
+	asciz "necessary."
+
+	db 0x05
+	ascii "This ensures that "
+	asciz "you will fail to  "
+
+	db 0x05
+	ascii "complete all the  "
+	asciz "puzzles, and so"
+
+	db 0x05
+	ascii "we do not need to "
+	asciz "deal with where"
+
+	db 0x05
+	ascii "to put you at the "
+	asciz "end of the puzzle"
+
+	db 0x05
+	asciz "course."
+
+	asciz ""
+
+; TODO: some random story fact
+script_middle_level2_info:
+	db 0x02
+	asciz "helloo"
+
+	asciz ""
 
 ; ==================
 ; ==================
@@ -240,24 +286,99 @@ script_surface_level1_start:
 
 	asciz ""
 
-script_test:
-	db 0x01
-	ascii "Hello! This is    "
-	asciz "text! Yay words!!!"
-
-	db 0x03
-	ascii "This is a test of "
-	asciz "dialogue!"
+script_surface_level2_sign:
+	db 0x02
+	asciz "hewlo zap"
 
 	db 0x02
-	asciz "I am a sign."
+	ascii "ef yu reid this yu"
+	asciz "hav eskape puzslez"
 
-	db 0x04
-	asciz "Yay it works!"
+	db 0x02
+	asciz "EY PLEN THIS 100%"
 
-	db 0x03
-	ascii "There's no more   "
-	asciz "dialogue now..."
+	db 0x02
+	asciz "plz gu bak nao"
+
+	db 0x02
+	ascii "ey hav souper     "
+	asciz "sekurity yu cannot"
+
+	db 0x02
+	asciz "get pasd"
+
+	db 0x02
+	asciz "- naht duki"
 
 	asciz ""
 
+script_surface_level3_start:
+	db 0x05
+	ascii "You have entered  "
+	asciz "a high-security"
+
+	db 0x05
+	ascii "zone. If you are  "
+	asciz "authorized to"
+
+	db 0x05
+	ascii "continue, please  "
+	asciz "solve the DuckPuzz"
+
+	db 0x05
+	ascii "on the computer   "
+	asciz "terminal."
+
+	asciz ""
+
+script_surface_level3_sign:
+	db 0x02
+	ascii "The DuckPuzz is   "
+	asciz "one of our many"
+
+	db 0x02
+	ascii "advanced security "
+	asciz "systems. It makes "
+
+	db 0x02
+	ascii "sure that only    "
+	asciz "someone with the"
+
+	db 0x02
+	ascii "correct solution  "
+	asciz "the puzzle can"
+
+	db 0x02
+	asciz "proceed."
+
+	db 0x02
+	ascii "A DuckPuzz can    "
+	asciz "only be completed "
+
+	db 0x02
+	ascii "by knowing the    "
+	asciz "solution ahead of"
+
+	db 0x02
+	ascii "time. This system "
+	asciz "has been verified"
+
+	db 0x02
+	ascii "to be completely  "
+	asciz "unbreakable by"
+
+	db 0x02
+	asciz "Ducky himself."
+
+	asciz ""
+
+; ==================
+; ==================
+; OTHER
+; ==================
+; ==================
+script_sign_no_entry:
+	db 0x02
+	asciz "NO ENTRY"
+
+	asciz ""
