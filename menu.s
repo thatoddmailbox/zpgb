@@ -33,6 +33,11 @@ menu_load:
 	ld hl, bg_tile_map_1
 	ld bc, 2*(bg_tile_map_2 - bg_tile_map_1)
 	call clrmem
+	
+	; disable the zum sprites
+	ld a, 0
+	ld [sprite0_y], a
+	ld [sprite1_y], a
 
 	; draw background level
 	ld bc, menu_demo_level

@@ -11,7 +11,8 @@
 
 .def LEVEL_TILE_COUNT (VRAM_WIDTH_TILES*VRAM_HEIGHT_TILES)
 
-.def HUD_HEIGHT_PX 16
+.def HUD_HEIGHT_PX 0
+.def HUD_PAUSE_HEIGHT_PX (8*10)
 .def DIALOGUE_HEIGHT_PX (8*4)
 
 .def SCREEN_MENU 0
@@ -87,7 +88,8 @@
 .def nonogram_instruction_buffer (ram_fixed_start+24) ; 8 chars long
 .def nonogram_state (ram_fixed_start+32) ; 8 bytes long
 .def credits_frame_counter (ram_fixed_start+40)
-.def num_buf (ram_fixed_start+41)
+.def hud_pause_active (ram_fixed_start+41)
+.def hud_pause_selection (ram_fixed_start+42)
 
 .def selector_select_table (ram_fixed_start+0x100)
 

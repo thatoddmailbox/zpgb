@@ -15,6 +15,10 @@
 
 .incasm "defs.s"
 
+.org 0x0000
+version_text:
+	asciz "v1.0"
+
 ; interrupts and stuff
 .incasm "vectors.s"
 

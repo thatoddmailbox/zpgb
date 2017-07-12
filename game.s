@@ -10,6 +10,10 @@ game_load:
 	ld [player_x], a
 	ld [player_y], a
 
+	; unpause game
+	ld a, 0
+	ld [hud_pause_active], a
+
 	; decompress the level passed in bc
 	call decompress_level
 
@@ -93,6 +97,15 @@ game_loop_normal:
 	; reset the port
 	ld [hl], 0b00110000
 	
+	push de
+	ld d, a
+	ld a, [hud_pause_active]
+	cp 1
+	ld a, d
+	pop de
+	call z, hud_pause_input
+	jp z, game_hud_pause_input_skip
+
 	push bc
 	push de
 	ld d, a
@@ -128,6 +141,7 @@ game_read_input_p14_done:
 	pop de
 	pop bc
 
+game_hud_pause_input_skip:
 	; test other inputs
 	bit 0, b ; is the a button up now?
 	jp nz, game_read_input_skip_a
@@ -143,6 +157,14 @@ game_read_input_skip_a:
 	call nz, b_button
 	pop bc
 game_read_input_skip_b:
+	bit 2, b ; is the b button up now?
+	jp nz, game_read_input_skip_select
+	bit 2, d ; was it up before?
+	push bc
+	call nz, select_button
+	pop bc
+game_read_input_skip_select:
+
 	; save this frame's input
 	ld [last_p14], a
 	ld a, b
@@ -159,6 +181,9 @@ game_loop_not_selector_mode:
 
 
 a_button:
+	ld a, [hud_pause_active]
+	cp 1
+	jp z, hud_pause_select
 	ld a, [selector_mode]
 	cp 0
 	jp nz, a_button_selector_mode
@@ -194,6 +219,10 @@ b_button_selector_mode:
 	; reset current info
 	call selector_start_selecting
 	call selector_set_sprites
+	ret
+
+select_button:
+	call hud_toggle_pause
 	ret
 
 move_up:

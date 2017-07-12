@@ -184,7 +184,7 @@ calc_viewport_scroll_check_y:
 	cp 68
 	jp c, calc_viewport_scroll_y_top_edge
 	; are we at the bottom?
-	cp (VRAM_HEIGHT_PX - 60)
+	cp (VRAM_HEIGHT_PX - 76)
 	jp nc, calc_viewport_scroll_y_bottom_edge
 	; we are in the center
 	sub 68
@@ -891,5 +891,5 @@ level_complete:
 	pop af
 	pop af
 	pop af
-	
+
 	jp prog_advance_level
