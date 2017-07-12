@@ -65,9 +65,7 @@ prog_load_current_level:
 
 ; prog_done: Run when all levels have been completed.
 prog_done:
-	ld b, b
-	ld a, 0
-	ld [IE], a
-	ld [IF], a
-	halt
-	nop
+	ld a, 3
+	ld [current_screen], a
+	call screen_load
+	jp screen_loop

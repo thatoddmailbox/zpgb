@@ -86,7 +86,8 @@
 .def nonogram_cursor_y (ram_fixed_start+23)
 .def nonogram_instruction_buffer (ram_fixed_start+24) ; 8 chars long
 .def nonogram_state (ram_fixed_start+32) ; 8 bytes long
-.def num_buf (ram_fixed_start+40)
+.def credits_frame_counter (ram_fixed_start+40)
+.def num_buf (ram_fixed_start+41)
 
 .def selector_select_table (ram_fixed_start+0x100)
 
