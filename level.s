@@ -85,6 +85,10 @@ load_level_palette_inner_loop:
 	jp z, load_level_palette_2
 	cp 0x9B
 	jp z, load_level_palette_2
+	cp 0xAE
+	jp z, load_level_palette_3
+	cp 0xAF
+	jp z, load_level_palette_3
 	load_level_palette_0:
 	ld a, 0
 	jp load_level_palette_inner_loop_done
@@ -93,6 +97,9 @@ load_level_palette_inner_loop:
 	jp load_level_palette_inner_loop_done
 	load_level_palette_2:
 	ld a, 2
+	jp load_level_palette_inner_loop_done
+	load_level_palette_3:
+	ld a, 3
 	load_level_palette_inner_loop_done:
 	ld [bc], a
 	inc bc
@@ -450,7 +457,7 @@ calculate_level_laser_clear_tile:
 	jp z, calculate_level_loop_resume
 	cp 0x9B
 	jp z, calculate_level_loop_resume
-	cp 0xAD
+	cp 0xAF
 	jp z, calculate_level_loop_resume
 
 	; are you the horizontal laser, which goes from 0x3 -> 0x0?
@@ -517,13 +524,24 @@ calculate_level_laser_fix_pistons:
 	pop hl
 	jp calculate_level_loop_resume
 
-; calculate_level_laser_check_lever: checks if the given tile is a lever, and if so, triggers its target
+; calculate_level_laser_check_lever: checks if the given tile is a lever or active terminal, and if so, triggers its target
 calculate_level_laser_check_lever:
 	ld a, [bc]
 
 	cp 0x9B
+	jp z, calculate_level_laser_check_lever_is_lever
+	cp 0xAF
 	jp nz, calculate_level_laser_check_lever_done
 
+	; it's a terminal
+	push hl
+	ld hl, (temp_level_buffer + 0x0)
+	ld a, 3 ; nonogram mode
+	call player_trigger_tile
+	pop hl
+	jp calculate_level_laser_check_lever_done
+
+calculate_level_laser_check_lever_is_lever:
 	push hl
 	ld h, b
 	ld l, c
@@ -833,7 +851,32 @@ level_sign_trigger:
 	jp player_trigger_tile_entry_resume
 
 level_terminal_trigger:
-	ld hl, ngram1
+	; test the tile
+	ld h, b
+	ld l, c
+	bit 0, [hl]
+	jp z, level_terminal_trigger_continue
+
+	; the lowest bit is set, meaning we've already done this
+	ld hl, script_msg_duckpuzz_already_done
+	call dialogue_start_script
+	jp player_trigger_tile_entry_resume
+
+level_terminal_trigger_continue:
+	; switch the tile because you can't exit a puzzle w/o completing it
+	set 0, [hl]
+
+	call wait_for_vblank_ly
+	call copy_temp_level_buffer_to_bg
+
+	; get the target nonogram
+	ld h, d
+	ld l, e
+	ldi a, [hl]
+	ld d, a
+	ldi a, [hl]
+	ld h, a
+	ld l, d
 	call nonogram_start_puzzle
 	jp player_trigger_tile_entry_resume
 

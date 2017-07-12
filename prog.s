@@ -1,4 +1,4 @@
-.def LEVEL_COUNT 12
+.def LEVEL_COUNT 16
 
 prog_level_table:
 	; INTRO PART
@@ -17,8 +17,11 @@ prog_level_table:
 	dw middle_level7
 
 	; SURFACE PART
-
-	dw level99
+	dw surface_level1
+	dw surface_level2
+	dw surface_level3
+	dw surface_level4
+	dw surface_level5
 
 ; prog_init: Initializes variables and memory related to the level progression handler.
 prog_init:

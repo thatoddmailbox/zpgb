@@ -1,5 +1,5 @@
-.def nonogram_grid_x 6
-.def nonogram_grid_y 6
+.def nonogram_grid_x 7
+.def nonogram_grid_y 7
 .def nonogram_grid_top_left (bg_tile_map_2+nonogram_grid_x+(nonogram_grid_y*32))
 
 ; nonogram_start_puzzle: Starts the nonogram pointed to by HL.
@@ -22,8 +22,13 @@ nonogram_start_puzzle:
 	; disable the display temporarily
 	call disable_lcd
 
-	; clear vram
+	; reset scroll registers
 	ld a, 0
+	ld [SCX], a
+	ld [SCY], a
+
+	; clear vram
+	; a already is 0
 	ld hl, bg_tile_map_2
 	ld bc, (bg_tile_map_2 - bg_tile_map_1) - 1
 	call clrmem
@@ -78,6 +83,8 @@ nonogram_start_puzzle_grid_row:
 	ld [sprite1_y], a
 	ld a, 4
 	ld [sprite2_t], a
+	ld a, 2
+	ld [sprite2_a], a
 
 	call nonogram_update_cursor
 
@@ -309,9 +316,13 @@ nonogram_restore_game:
 	call calc_viewport_scroll
 
 	; special hardcoded trigger for nonogram end
-	ld hl, temp_level_buffer
-	ld a, 3
-	call player_trigger_tile
+	;ld hl, temp_level_buffer
+	;ld a, 3
+	;call player_trigger_tile
+
+	; update tiles (this will activate the trigger)
+	call wait_for_vblank_ly
+	call calculate_level_lasers
 
 	; return to the game loop
 	ret
@@ -336,7 +347,37 @@ nonogram_update_cursor:
 
 ; nonogram_set_cursor_color: Sets the tile number of the cursor to the appropriate color for the tile underneath it.
 nonogram_set_cursor_color:
-	
+	; get the current tile
+	ld a, [nonogram_cursor_x]
+	ld b, a
+	ld a, [nonogram_cursor_y]
+	ld d, 0
+	ld e, a
+
+	ld hl, nonogram_state
+	add hl, de ; hl now points to the byte with the column with the current tile
+
+	inc b
+	ld c, 0b00000001
+nonogram_set_cursor_color_bitmask_loop:
+	rrc c
+	dec b
+	jp nz, nonogram_set_cursor_color_bitmask_loop
+
+	; c now is the bitmask needed to access the current tile
+	ld a, [hl]
+	and c
+	cp 0
+	jp z, nonogram_set_cursor_color_current_off
+	ld b, 5 ; inverted cursor
+	jp nonogram_set_cursor_color_current_done
+nonogram_set_cursor_color_current_off:
+	ld b, 4 ; default cursor
+nonogram_set_cursor_color_current_done:
+	; set the cursor
+	ld a, b
+	ld [sprite2_t], a
+
 	ret
 
 ; nonogram_wrap_value: Wraps the value in register A to be between 0 and D-1, inclusive
@@ -494,6 +535,8 @@ nonogram_check_for_solution_loop:
 	jp nonogram_restore_game
 
 nonogram_check_for_solution_fail:
+	call nonogram_set_cursor_color
+
 	pop de
 	pop bc
 	ret

@@ -104,7 +104,9 @@ main:
 	call memcpy
 	ld d, 255
 	call memcpy
-	ld d, ((sharedset_end - sharedset) - (255*2))
+	ld d, 255
+	call memcpy
+	ld d, ((sharedset_end - sharedset) - (255*3))
 	call memcpy
 
 	ld hl, (bg_tile_data - (endset_end - endset))
@@ -154,8 +156,18 @@ main:
 	ld [hl], 0b00100001 ; on green
 	ld [hl], 0b10000010
 
-	; BG 3-6
-	ld a, 4*8
+	; BG 3
+	ld [hl], 0b10110101 ; background gray
+	ld [hl], 0b01010110
+	ld [hl], 0b01001010 ; light gray
+	ld [hl], 0b00101001
+	ld [hl], 0b10000100 ; dark gray
+	ld [hl], 0b00010000
+	ld [hl], 0b01100000 ; screen blue
+	ld [hl], 0b01011001
+
+	; BG 4-6
+	ld a, 3*8
 reset_bg_palettes_loop:
 	ld [hl], 0b00000000
 	dec a
@@ -194,6 +206,16 @@ reset_bg_palettes_loop:
 	ld [hl], 0b00000000 ;
 	ld [hl], 0b11111111 ; selected selector color
 	ld [hl], 0b00000011 ;
+	ld [hl], 0b00000000 ; black
+	ld [hl], 0b00000000 ;
+
+	; OBJ 2
+	ld [hl], 0b00000000 ; transparent
+	ld [hl], 0b00000000
+	ld [hl], 0b11111111 ; white
+	ld [hl], 0b01111111 ;
+	ld [hl], 0b00000000 ; unused
+	ld [hl], 0b00000000 ;
 	ld [hl], 0b00000000 ; black
 	ld [hl], 0b00000000 ;
 

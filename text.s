@@ -346,7 +346,7 @@ script_surface_level3_sign:
 
 	db 0x02
 	ascii "correct solution  "
-	asciz "the puzzle can"
+	asciz "to the puzzle can"
 
 	db 0x02
 	asciz "proceed."
@@ -377,6 +377,16 @@ script_surface_level3_sign:
 ; OTHER
 ; ==================
 ; ==================
+script_msg_duckpuzz_already_done:
+	db 0x07
+	ascii "You've already    "
+	asciz "completed this"
+
+	db 0x07
+	asciz "DuckPuzz."
+
+	asciz ""
+
 script_sign_no_entry:
 	db 0x02
 	asciz "NO ENTRY"
