@@ -94,11 +94,11 @@ dialogue_write_into_box_loop_fill:
 	ld a, e
 	cp 0
 	jp z, dialogue_write_into_box_loop_end
-	call wait_for_vblank_ly
-	ld a, 0
 dialogue_write_into_box_loop_fill_loop:
+	ld a, 0
 	ld [bc], a
 	inc bc
+	call wait_for_vblank_ly
 	dec e
 	jp nz, dialogue_write_into_box_loop_fill_loop
 dialogue_write_into_box_loop_end:
@@ -233,4 +233,8 @@ dialogue_character_table:
 
 	; 0x07
 	ascii "DuckPuzz"
+	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+
+	; 0x09
+	ascii ""
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00

@@ -881,4 +881,15 @@ level_terminal_trigger_continue:
 	jp player_trigger_tile_entry_resume
 
 level_complete:
+	; clear the stack
+	; i know this is a dumb way to do this
+	; a better way would be to just return upwards until we get back to the game loop
+	; but i'm tired and don't want to deal with complicated lr35902 assembly so too bad
+	pop af
+	pop af
+	pop af
+	pop af
+	pop af
+	pop af
+	
 	jp prog_advance_level

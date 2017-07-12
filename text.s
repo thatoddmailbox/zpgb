@@ -221,10 +221,19 @@ script_middle_level1_start:
 
 	asciz ""
 
-; TODO: some random story fact
 script_middle_level2_info:
 	db 0x02
-	asciz "helloo"
+	asciz "EMPERTANT"
+
+	db 0x02
+	asciz "ehhhh"
+
+	db 0x02
+	asciz "ey'm naht shure"
+
+	db 0x02
+	ascii "ey juzt wentad tu "
+	asciz "hav eh segn hir."
 
 	asciz ""
 
@@ -374,6 +383,32 @@ script_surface_level3_sign:
 
 ; ==================
 ; ==================
+; END
+; ==================
+; ==================
+script_end_level1_start:
+	db 0x09
+	asciz "*chime noise*"
+
+	db 0x05
+	ascii "The DuckLine      "
+	asciz "Emergency Express"
+
+	db 0x05
+	ascii "will be departing "
+	asciz "shortly."
+
+	asciz ""
+
+script_end_level1_sign:
+	db 0x02
+	ascii "To DuckLine       "
+	asciz "Maintenance"
+
+	asciz ""
+
+; ==================
+; ==================
 ; OTHER
 ; ==================
 ; ==================
@@ -384,11 +419,5 @@ script_msg_duckpuzz_already_done:
 
 	db 0x07
 	asciz "DuckPuzz."
-
-	asciz ""
-
-script_sign_no_entry:
-	db 0x02
-	asciz "NO ENTRY"
 
 	asciz ""
