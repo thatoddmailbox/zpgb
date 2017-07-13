@@ -155,7 +155,7 @@ calc_viewport_scroll:
 	jp nc, calc_viewport_scroll_x_right_edge
 	; we are in the center
 	sub 72
-	ldh [SCX], a
+	ld [new_scroll_x], a
 	ld a, 72
 	add a, 0x8
 	ld [sprite0_x], a
@@ -164,14 +164,14 @@ calc_viewport_scroll_x_left_edge:
 	add a, 0x8
 	ld [sprite0_x], a
 	ld a, 0
-	ldh [SCX], a
+	ld [new_scroll_x], a
 	jp calc_viewport_scroll_check_y
 calc_viewport_scroll_x_right_edge:
 	sub 95
 	add a, 0x8
 	ld [sprite0_x], a
 	ld a, (VRAM_WIDTH_PX - SCREEN_WIDTH_PX)
-	ldh [SCX], a
+	ld [new_scroll_x], a
 
 calc_viewport_scroll_check_y:
 	; if y < 68, SCY = 0, sprite y = y
@@ -188,7 +188,7 @@ calc_viewport_scroll_check_y:
 	jp nc, calc_viewport_scroll_y_bottom_edge
 	; we are in the center
 	sub 68
-	ldh [SCY], a
+	ld [new_scroll_y], a
 	ld a, 68
 	add a, 0x10
 	ld [sprite0_y], a
@@ -197,14 +197,14 @@ calc_viewport_scroll_y_top_edge:
 	add a, 0x10
 	ld [sprite0_y], a
 	ld a, 0
-	ldh [SCY], a
+	ld [new_scroll_y], a
 	jp calc_viewport_scroll_done
 calc_viewport_scroll_y_bottom_edge:
 	add a, 0x10
 	sub ((VRAM_HEIGHT_PX - SCREEN_HEIGHT_PX) + HUD_HEIGHT_PX)
 	ld [sprite0_y], a
 	ld a, ((VRAM_HEIGHT_PX - SCREEN_HEIGHT_PX) + HUD_HEIGHT_PX)
-	ldh [SCY], a
+	ld [new_scroll_y], a
 
 calc_viewport_scroll_done:
 	; position the right side
@@ -215,6 +215,15 @@ calc_viewport_scroll_done:
 	ld [sprite1_y], a
 	ld a, 1
 	ld [sprite1_t], a
+
+	; if new_scroll_available == 0, immediately set registers
+	ld a, [new_scroll_available]
+	cp 0
+	ret nz ; it's already 1, so the vblank-synced loop will handle it
+	ld a, [new_scroll_x]
+	ldh [SCX], a
+	ld a, [new_scroll_y]
+	ldh [SCY], a
 	ret
 
 ; check_tile_is_solid: Set Z if the tile at (d, e) is solid, else clear Z.

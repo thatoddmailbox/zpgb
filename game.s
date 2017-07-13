@@ -14,6 +14,8 @@ game_load:
 	ld a, 0
 	ld [hud_pause_active], a
 
+	ld [new_scroll_available], a
+
 	; decompress the level passed in bc
 	call decompress_level
 
@@ -65,6 +67,16 @@ game_loop:
 	halt
 	nop
 
+	ld a, [new_scroll_available]
+	cp 0
+	jp z, game_loop_no_new_scroll
+	ld a, [new_scroll_x]
+	ldh [SCX], a
+	ld a, [new_scroll_y]
+	ldh [SCY], a
+	ld a, 0
+	ld [new_scroll_available], a
+game_loop_no_new_scroll:
 	ld a, [nonogram_active]
 	cp 1
 	jp z, nonogram_tick ; if the nonogram's open, bypass everything else
@@ -279,6 +291,8 @@ move_right:
 	ld hl, player_x
 	inc [hl]
 move_done:
+	ld a, 1
+	ld [new_scroll_available], a
 	call calc_viewport_scroll
 	pop af
 	ret
