@@ -142,6 +142,7 @@ hud_pause_select_option2:
 	; back to menu
 	; clear stack
 	pop af
+	pop af
 	ld a, 0
 	ld [current_screen], a
 	call screen_load

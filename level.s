@@ -900,5 +900,7 @@ level_complete:
 	pop af
 	pop af
 	pop af
+	pop af
+	pop af
 
 	jp prog_advance_level
