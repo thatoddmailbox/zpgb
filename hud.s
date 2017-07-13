@@ -86,13 +86,13 @@ hud_pause_input:
 	push bc
 	push de
 
-	bit 2, a ; is the right button down?
+	bit 2, a ; is the up button down?
 	jp nz, hud_pause_input_skip_up
 	bit 2, c ; was it up before?
 	ld d, 1
 	call nz, hud_pause_move
 hud_pause_input_skip_up:
-	bit 3, a ; is the left button down?
+	bit 3, a ; is the down button down?
 	jp nz, hud_pause_input_skip_done
 	bit 3, c ; was it up before?
 	ld d, 255
@@ -119,14 +119,14 @@ hud_pause_move:
 	ld a, 0
 	jp nz, hud_pause_move_option2
 hud_pause_move_option1:
-	ld [(bg_tile_map_2 + (32*4) + 1)], a
-	ld a, 0x10
 	ld [(bg_tile_map_2 + (32*5) + 1)], a
+	ld a, 0x10
+	ld [(bg_tile_map_2 + (32*4) + 1)], a
 	jp hud_pause_move_option_done
 hud_pause_move_option2:
-	ld [(bg_tile_map_2 + (32*5) + 1)], a
-	ld a, 0x10
 	ld [(bg_tile_map_2 + (32*4) + 1)], a
+	ld a, 0x10
+	ld [(bg_tile_map_2 + (32*5) + 1)], a
 hud_pause_move_option_done:
 	pop af
 	ret
