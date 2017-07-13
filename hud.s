@@ -5,6 +5,21 @@ hud_init:
 	ld [hud_pause_selection], a
 	ret
 
+; hud_reset: Resets the HUD window while the LCD is on, then draws it
+hud_reset:
+	ld a, 0x00
+	ld bc, bg_tile_map_2
+	ld d, 255
+	call vmemset
+	ld d, 255
+	call vmemset
+	ld d, 255
+	call vmemset
+	ld d, 255
+	call vmemset
+	ld d, 4
+	call vmemset
+
 ; hud_draw: Draws the HUD.
 hud_draw:
 	ld bc, bg_tile_map_2

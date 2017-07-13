@@ -26,6 +26,7 @@ nonogram_start_puzzle:
 	ld a, 0
 	ld [SCX], a
 	ld [SCY], a
+	ld [new_scroll_available], a
 
 	; clear vram
 	; a already is 0
@@ -308,6 +309,9 @@ nonogram_restore_game:
 
 	ld [sprite2_y], a; disable the cursor sprite
 	ld [nonogram_active], a ; disable the nonogram
+
+	; fix the pause menu
+	call hud_reset
 
 	; re-enable the window
 	ld a, 0b11100011 ; enable window
