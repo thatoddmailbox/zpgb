@@ -310,6 +310,7 @@ resume_a_button:
 	jp z, resume_done
 	add a, 'A'
 	push bc
+	push de
 	ld b, a
 	; b now has the ASCII character to add
 	ld hl, password_buffer
@@ -330,6 +331,7 @@ resume_a_button_scan_done:
 	ldi [hl], a
 resume_a_button_done:
 	call resume_draw_password
+	pop de
 	pop bc
 	ret
 
@@ -381,6 +383,9 @@ resume_done:
 	jp screen_loop
 
 resume_bad_password:
+	push bc
+	push de
+
 	call wait_for_vblank_ly
 	ld hl, (bg_tile_map_2 + (32*11) + 2)
 	ld bc, resume_bad_password_str
@@ -400,6 +405,8 @@ resume_bad_password_idle_loop:
 	ld bc, resume_bad_password_clr_str
 	call strcpy
 
+	pop de
+	pop bc
 	ret
 
 resume_draw_password:
