@@ -3,12 +3,14 @@ screen_load_jump_table:
 	dw game_load
 	dw story_load
 	dw credits_load
+	dw resume_load
 
 screen_loop_jump_table:
 	dw menu_loop
 	dw game_loop
 	dw story_loop
 	dw credits_loop
+	dw resume_loop
 
 screen_load:
 	push bc

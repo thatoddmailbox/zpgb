@@ -159,7 +159,7 @@ hud_toggle_pause_disable:
 	; disable pause
 	ldh a, [WY]
 	cp (SCREEN_HEIGHT_PX - HUD_HEIGHT_PX)
-	jp z, hud_toggle_pause_done
+	jp z, hud_toggle_pause_disable_done
 	inc a
 	ldh [WY], a
 	ld a, 0b00000001
@@ -167,11 +167,25 @@ hud_toggle_pause_disable:
 	halt
 	nop
 	jp hud_toggle_pause_disable
+hud_toggle_pause_disable_done:
+	call calc_viewport_scroll ; unhide zums
+	jp hud_toggle_pause_done
 hud_toggle_pause_enable:
 	; enable pause
+	; hide zums
+	ld a, 0
+	ld [sprite0_y], a
+	ld [sprite1_y], a
 	; clear dialogue a button prompt
 	ld a, 0
 	ld [(bg_tile_map_2 + 32 + 32 + 32 + SCREEN_WIDTH_TILES - 1)], a
+	; generate password
+	call password_generate
+	call wait_for_vblank_ly
+	ld hl, (bg_tile_map_2 + (32*7) + 11)
+	ld bc, password_buffer
+	call strcpy
+hud_toggle_pause_enable_loop:
 	; open the window
 	ldh a, [WY]
 	cp (SCREEN_HEIGHT_PX - HUD_PAUSE_HEIGHT_PX)
@@ -182,7 +196,7 @@ hud_toggle_pause_enable:
 	ldh [IE], a
 	halt
 	nop
-	jp hud_toggle_pause_enable
+	jp hud_toggle_pause_enable_loop
 hud_toggle_pause_done:
 	ret
 

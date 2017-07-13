@@ -33,7 +33,7 @@ menu_load:
 	ld hl, bg_tile_map_1
 	ld bc, 2*(bg_tile_map_2 - bg_tile_map_1)
 	call clrmem
-	
+
 	; disable the zum sprites
 	ld a, 0
 	ld [sprite0_y], a
@@ -205,9 +205,8 @@ menu_new_game:
 
 ; menu_continue_game: Handles continuing a game from a password.
 menu_continue_game:
-	ld a, 16
-	ld [prog_current_level], a
-	jp prog_load_current_level
+	ld a, 4
+	ld [current_screen], a
 
 	call screen_load
 	jp screen_loop

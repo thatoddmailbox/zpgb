@@ -90,6 +90,8 @@
 .def credits_frame_counter (ram_fixed_start+40)
 .def hud_pause_active (ram_fixed_start+41)
 .def hud_pause_selection (ram_fixed_start+42)
+.def resume_selection (ram_fixed_start+43)
+.def password_buffer (ram_fixed_start+44) ; 4 bytes long + 1 byte for null bytes
 
 .def selector_select_table (ram_fixed_start+0x100)
 

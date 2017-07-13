@@ -39,6 +39,12 @@ game_load:
 	ld a, 0
 	ldh [VBK], a
 
+	; clear pause menu tiles
+	ld a, 0
+	ld hl, bg_tile_map_2
+	ld bc, 2*(bg_tile_map_2 - bg_tile_map_1)
+	call clrmem
+
 	ld a, 0b11100011 ; enable window
 	ldh [LCDC], a
 

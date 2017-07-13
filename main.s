@@ -240,6 +240,8 @@ reset_bg_palettes_loop:
 .incasm "story.s"
 .incasm "nonogram.s"
 .incasm "credits.s"
+.incasm "password.s"
+.incasm "resume.s"
 
 ; wait_for_vblank: Waits for vblank.
 wait_for_vblank:

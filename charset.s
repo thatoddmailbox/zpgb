@@ -871,7 +871,7 @@ charset:
 	DB 0b00000000
 	DB 0b00000000
 	DB 0b00000000
-	DB 0b11111111
+	DB 0b01111110
 
 ; Characters $60 - $7f
 
