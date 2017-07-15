@@ -354,3 +354,9 @@ disable_lcd:
 	ld a, 0
 	ldh [LCDC], a
 	ret
+	
+.org 0x2000
+asciz "July 13th, 2017"
+asciz "yay a secret message"
+asciz "I don't know what to put here"
+asciz ":)"
