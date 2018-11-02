@@ -107,67 +107,9 @@ function GameBoyCore(canvas, ROMImage) {
 	this.lowX = 127;
 	this.highY = 127;
 	this.lowY = 127;
-	//Sound variables:
-	this.audioHandle = null;						//XAudioJS handle
-	this.numSamplesTotal = 0;						//Length of the sound buffers.
-	this.dutyLookup = [								//Map the duty values given to ones we can work with.
-		[false, false, false, false, false, false, false, true],
-		[true, false, false, false, false, false, false, true],
-		[true, false, false, false, false, true, true, true],
-		[false, true, true, true, true, true, true, false]
-	];
-	this.bufferContainAmount = 0;					//Buffer maintenance metric.
-	this.LSFR15Table = null;
-	this.LSFR7Table = null;
-	this.noiseSampleTable = null;
-	this.initializeAudioStartState();
-	this.soundMasterEnabled = false;			//As its name implies
-	this.channel3PCM = null;					//Channel 3 adjusted sample buffer.
-	//Vin Shit:
-	this.VinLeftChannelMasterVolume = 8;		//Computed post-mixing volume.
-	this.VinRightChannelMasterVolume = 8;		//Computed post-mixing volume.
-	//Channel paths enabled:
-	this.leftChannel1 = false;
-	this.leftChannel2 = false;
-	this.leftChannel3 = false;
-	this.leftChannel4 = false;
-	this.rightChannel1 = false;
-	this.rightChannel2 = false;
-	this.rightChannel3 = false;
-	this.rightChannel4 = false;
-	this.audioClocksUntilNextEvent = 1;
-	this.audioClocksUntilNextEventCounter = 1;
-	//Channel output level caches:
-	this.channel1currentSampleLeft = 0;
-	this.channel1currentSampleRight = 0;
-	this.channel2currentSampleLeft = 0;
-	this.channel2currentSampleRight = 0;
-	this.channel3currentSampleLeft = 0;
-	this.channel3currentSampleRight = 0;
-	this.channel4currentSampleLeft = 0;
-	this.channel4currentSampleRight = 0;
-	this.channel1currentSampleLeftSecondary = 0;
-	this.channel1currentSampleRightSecondary = 0;
-	this.channel2currentSampleLeftSecondary = 0;
-	this.channel2currentSampleRightSecondary = 0;
-	this.channel3currentSampleLeftSecondary = 0;
-	this.channel3currentSampleRightSecondary = 0;
-	this.channel4currentSampleLeftSecondary = 0;
-	this.channel4currentSampleRightSecondary = 0;
-	this.channel1currentSampleLeftTrimary = 0;
-	this.channel1currentSampleRightTrimary = 0;
-	this.channel2currentSampleLeftTrimary = 0;
-	this.channel2currentSampleRightTrimary = 0;
-	this.mixerOutputCache = 0;
 	//Pre-multipliers to cache some calculations:
 	this.emulatorSpeed = 1;
 	this.initializeTiming();
-	//Audio generation counters:
-	this.audioTicks = 0;				//Used to sample the audio system every x CPU instructions.
-	this.audioIndex = 0;				//Used to keep alignment on audio generation.
-	this.downsampleInput = 0;
-	this.audioDestinationPosition = 0;	//Used to keep alignment on audio generation.
-	this.rollover = 0;					//Used to keep alignment on the number of samples to output (Realign from counter alias).
 	//Timing Variables
 	this.emulatorTicks = 0;				//Times for how many instructions to execute before ending the loop.
 	this.DIVTicks = 56;					//DIV Ticks Counter (Invisible lower 8-bit)
@@ -264,8 +206,6 @@ function GameBoyCore(canvas, ROMImage) {
 	this.onscreenHeight = this.offscreenHeight = 144;
 	this.offscreenRGBCount = this.onscreenWidth * this.onscreenHeight * 4;
 	this.resizePathClear = true;
-	//Initialize the white noise cache tables ahead of time:
-	this.intializeWhiteNoise();
 }
 GameBoyCore.prototype.GBBOOTROM = [		//GB BOOT ROM
 	//Add 256 byte boot rom here if you are going to use it.
@@ -4026,95 +3966,9 @@ GameBoyCore.prototype.saveState = function () {
 		this.fromTypedArray(this.frameBuffer),
 		this.bgEnabled,
 		this.BGPriorityEnabled,
-		this.channel1FrequencyTracker,
-		this.channel1FrequencyCounter,
-		this.channel1totalLength,
-		this.channel1envelopeVolume,
-		this.channel1envelopeType,
-		this.channel1envelopeSweeps,
-		this.channel1envelopeSweepsLast,
-		this.channel1consecutive,
-		this.channel1frequency,
-		this.channel1SweepFault,
-		this.channel1ShadowFrequency,
-		this.channel1timeSweep,
-		this.channel1lastTimeSweep,
-		this.channel1Swept,
-		this.channel1frequencySweepDivider,
-		this.channel1decreaseSweep,
-		this.channel2FrequencyTracker,
-		this.channel2FrequencyCounter,
-		this.channel2totalLength,
-		this.channel2envelopeVolume,
-		this.channel2envelopeType,
-		this.channel2envelopeSweeps,
-		this.channel2envelopeSweepsLast,
-		this.channel2consecutive,
-		this.channel2frequency,
-		this.channel3canPlay,
-		this.channel3totalLength,
-		this.channel3patternType,
-		this.channel3frequency,
-		this.channel3consecutive,
-		this.fromTypedArray(this.channel3PCM),
-		this.channel4FrequencyPeriod,
-		this.channel4lastSampleLookup,
-		this.channel4totalLength,
-		this.channel4envelopeVolume,
-		this.channel4currentVolume,
-		this.channel4envelopeType,
-		this.channel4envelopeSweeps,
-		this.channel4envelopeSweepsLast,
-		this.channel4consecutive,
-		this.channel4BitRange,
-		this.soundMasterEnabled,
-		this.VinLeftChannelMasterVolume,
-		this.VinRightChannelMasterVolume,
-		this.leftChannel1,
-		this.leftChannel2,
-		this.leftChannel3,
-		this.leftChannel4,
-		this.rightChannel1,
-		this.rightChannel2,
-		this.rightChannel3,
-		this.rightChannel4,
-		this.channel1currentSampleLeft,
-		this.channel1currentSampleRight,
-		this.channel2currentSampleLeft,
-		this.channel2currentSampleRight,
-		this.channel3currentSampleLeft,
-		this.channel3currentSampleRight,
-		this.channel4currentSampleLeft,
-		this.channel4currentSampleRight,
-		this.channel1currentSampleLeftSecondary,
-		this.channel1currentSampleRightSecondary,
-		this.channel2currentSampleLeftSecondary,
-		this.channel2currentSampleRightSecondary,
-		this.channel3currentSampleLeftSecondary,
-		this.channel3currentSampleRightSecondary,
-		this.channel4currentSampleLeftSecondary,
-		this.channel4currentSampleRightSecondary,
-		this.channel1currentSampleLeftTrimary,
-		this.channel1currentSampleRightTrimary,
-		this.channel2currentSampleLeftTrimary,
-		this.channel2currentSampleRightTrimary,
 		this.mixerOutputCache,
-		this.channel1DutyTracker,
-		this.channel1CachedDuty,
-		this.channel2DutyTracker,
-		this.channel2CachedDuty,
-		this.channel1Enabled,
-		this.channel2Enabled,
-		this.channel3Enabled,
-		this.channel4Enabled,
 		this.sequencerClocks,
 		this.sequencePosition,
-		this.channel3Counter,
-		this.channel4Counter,
-		this.cachedChannel3Sample,
-		this.cachedChannel4Sample,
-		this.channel3FrequencyPeriod,
-		this.channel3lastSampleLookup,
 		this.actualScanLine,
 		this.lastUnrenderedLine,
 		this.queuedScanLines,
@@ -4156,9 +4010,7 @@ GameBoyCore.prototype.saveState = function () {
 		this.colorizedGBPalettes,
 		this.backgroundY,
 		this.backgroundX,
-		this.CPUStopped,
-		this.audioClocksUntilNextEvent,
-		this.audioClocksUntilNextEventCounter
+		this.CPUStopped
 	];
 }
 GameBoyCore.prototype.returnFromState = function (returnedFrom) {
@@ -4239,95 +4091,9 @@ GameBoyCore.prototype.returnFromState = function (returnedFrom) {
 	this.frameBuffer = this.toTypedArray(state[index++], "int32");
 	this.bgEnabled = state[index++];
 	this.BGPriorityEnabled = state[index++];
-	this.channel1FrequencyTracker = state[index++];
-	this.channel1FrequencyCounter = state[index++];
-	this.channel1totalLength = state[index++];
-	this.channel1envelopeVolume = state[index++];
-	this.channel1envelopeType = state[index++];
-	this.channel1envelopeSweeps = state[index++];
-	this.channel1envelopeSweepsLast = state[index++];
-	this.channel1consecutive = state[index++];
-	this.channel1frequency = state[index++];
-	this.channel1SweepFault = state[index++];
-	this.channel1ShadowFrequency = state[index++];
-	this.channel1timeSweep = state[index++];
-	this.channel1lastTimeSweep = state[index++];
-	this.channel1Swept = state[index++];
-	this.channel1frequencySweepDivider = state[index++];
-	this.channel1decreaseSweep = state[index++];
-	this.channel2FrequencyTracker = state[index++];
-	this.channel2FrequencyCounter = state[index++];
-	this.channel2totalLength = state[index++];
-	this.channel2envelopeVolume = state[index++];
-	this.channel2envelopeType = state[index++];
-	this.channel2envelopeSweeps = state[index++];
-	this.channel2envelopeSweepsLast = state[index++];
-	this.channel2consecutive = state[index++];
-	this.channel2frequency = state[index++];
-	this.channel3canPlay = state[index++];
-	this.channel3totalLength = state[index++];
-	this.channel3patternType = state[index++];
-	this.channel3frequency = state[index++];
-	this.channel3consecutive = state[index++];
-	this.channel3PCM = this.toTypedArray(state[index++], "int8");
-	this.channel4FrequencyPeriod = state[index++];
-	this.channel4lastSampleLookup = state[index++];
-	this.channel4totalLength = state[index++];
-	this.channel4envelopeVolume = state[index++];
-	this.channel4currentVolume = state[index++];
-	this.channel4envelopeType = state[index++];
-	this.channel4envelopeSweeps = state[index++];
-	this.channel4envelopeSweepsLast = state[index++];
-	this.channel4consecutive = state[index++];
-	this.channel4BitRange = state[index++];
-	this.soundMasterEnabled = state[index++];
-	this.VinLeftChannelMasterVolume = state[index++];
-	this.VinRightChannelMasterVolume = state[index++];
-	this.leftChannel1 = state[index++];
-	this.leftChannel2 = state[index++];
-	this.leftChannel3 = state[index++];
-	this.leftChannel4 = state[index++];
-	this.rightChannel1 = state[index++];
-	this.rightChannel2 = state[index++];
-	this.rightChannel3 = state[index++];
-	this.rightChannel4 = state[index++];
-	this.channel1currentSampleLeft = state[index++];
-	this.channel1currentSampleRight = state[index++];
-	this.channel2currentSampleLeft = state[index++];
-	this.channel2currentSampleRight = state[index++];
-	this.channel3currentSampleLeft = state[index++];
-	this.channel3currentSampleRight = state[index++];
-	this.channel4currentSampleLeft = state[index++];
-	this.channel4currentSampleRight = state[index++];
-	this.channel1currentSampleLeftSecondary = state[index++];
-	this.channel1currentSampleRightSecondary = state[index++];
-	this.channel2currentSampleLeftSecondary = state[index++];
-	this.channel2currentSampleRightSecondary = state[index++];
-	this.channel3currentSampleLeftSecondary = state[index++];
-	this.channel3currentSampleRightSecondary = state[index++];
-	this.channel4currentSampleLeftSecondary = state[index++];
-	this.channel4currentSampleRightSecondary = state[index++];
-	this.channel1currentSampleLeftTrimary = state[index++];
-	this.channel1currentSampleRightTrimary = state[index++];
-	this.channel2currentSampleLeftTrimary = state[index++];
-	this.channel2currentSampleRightTrimary = state[index++];
 	this.mixerOutputCache = state[index++];
-	this.channel1DutyTracker = state[index++];
-	this.channel1CachedDuty = state[index++];
-	this.channel2DutyTracker = state[index++];
-	this.channel2CachedDuty = state[index++];
-	this.channel1Enabled = state[index++];
-	this.channel2Enabled = state[index++];
-	this.channel3Enabled = state[index++];
-	this.channel4Enabled = state[index++];
 	this.sequencerClocks = state[index++];
 	this.sequencePosition = state[index++];
-	this.channel3Counter = state[index++];
-	this.channel4Counter = state[index++];
-	this.cachedChannel3Sample = state[index++];
-	this.cachedChannel4Sample = state[index++];
-	this.channel3FrequencyPeriod = state[index++];
-	this.channel3lastSampleLookup = state[index++];
 	this.actualScanLine = state[index++];
 	this.lastUnrenderedLine = state[index++];
 	this.queuedScanLines = state[index++];
@@ -4371,8 +4137,6 @@ GameBoyCore.prototype.returnFromState = function (returnedFrom) {
 	this.backgroundY = state[index++];
 	this.backgroundX = state[index++];
 	this.CPUStopped = state[index++];
-	this.audioClocksUntilNextEvent = state[index++];
-	this.audioClocksUntilNextEventCounter = state[index];
 	this.fromSaveState = true;
 	this.TICKTable = this.toTypedArray(this.TICKTable, "uint8");
 	this.SecondaryTICKTable = this.toTypedArray(this.SecondaryTICKTable, "uint8");
@@ -4380,9 +4144,6 @@ GameBoyCore.prototype.returnFromState = function (returnedFrom) {
 	this.memoryReadJumpCompile();
 	this.memoryWriteJumpCompile();
 	this.initLCD();
-	this.initSound();
-	this.noiseSampleTable = (this.channel4BitRange == 0x7FFF) ? this.LSFR15Table : this.LSFR7Table;
-	this.channel4VolumeShifter = (this.channel4BitRange == 0x7FFF) ? 15 : 7;
 }
 GameBoyCore.prototype.returnFromRTCState = function () {
 	if (typeof this.openRTC == "function" && this.cTIMER) {
@@ -4407,7 +4168,6 @@ GameBoyCore.prototype.start = function () {
 	this.initMemory();	//Write the startup memory.
 	this.ROMLoad();		//Load the ROM into memory and get cartridge information from it.
 	this.initLCD();		//Initialize the graphics.
-	this.initSound();	//Sound object initialization.
 	this.run();			//Start the emulation.
 }
 GameBoyCore.prototype.initMemory = function () {
@@ -4417,7 +4177,6 @@ GameBoyCore.prototype.initMemory = function () {
 	this.BGCHRBank1 = this.getTypedArray(0x800, 0, "uint8");
 	this.TICKTable = this.toTypedArray(this.TICKTable, "uint8");
 	this.SecondaryTICKTable = this.toTypedArray(this.SecondaryTICKTable, "uint8");
-	this.channel3PCM = this.getTypedArray(0x20, 0, "int8");
 }
 GameBoyCore.prototype.generateCacheArray = function (tileAmount) {
 	var tileArray = [];
@@ -4489,66 +4248,6 @@ GameBoyCore.prototype.initSkipBootstrap = function () {
 	this.mode1TriggerSTAT = false;
 	this.mode0TriggerSTAT = false;
 	this.LCDisOn = true;
-	this.channel1FrequencyTracker = 0x2000;
-	this.channel1DutyTracker = 0;
-	this.channel1CachedDuty = this.dutyLookup[2];
-	this.channel1totalLength = 0;
-	this.channel1envelopeVolume = 0;
-	this.channel1envelopeType = false;
-	this.channel1envelopeSweeps = 0;
-	this.channel1envelopeSweepsLast = 0;
-	this.channel1consecutive = true;
-	this.channel1frequency = 1985;
-	this.channel1SweepFault = true;
-	this.channel1ShadowFrequency = 1985;
-	this.channel1timeSweep = 1;
-	this.channel1lastTimeSweep = 0;
-	this.channel1Swept = false;
-	this.channel1frequencySweepDivider = 0;
-	this.channel1decreaseSweep = false;
-	this.channel2FrequencyTracker = 0x2000;
-	this.channel2DutyTracker = 0;
-	this.channel2CachedDuty = this.dutyLookup[2];
-	this.channel2totalLength = 0;
-	this.channel2envelopeVolume = 0;
-	this.channel2envelopeType = false;
-	this.channel2envelopeSweeps = 0;
-	this.channel2envelopeSweepsLast = 0;
-	this.channel2consecutive = true;
-	this.channel2frequency = 0;
-	this.channel3canPlay = false;
-	this.channel3totalLength = 0;
-	this.channel3patternType = 4;
-	this.channel3frequency = 0;
-	this.channel3consecutive = true;
-	this.channel3Counter = 0x418;
-	this.channel4FrequencyPeriod = 8;
-	this.channel4totalLength = 0;
-	this.channel4envelopeVolume = 0;
-	this.channel4currentVolume = 0;
-	this.channel4envelopeType = false;
-	this.channel4envelopeSweeps = 0;
-	this.channel4envelopeSweepsLast = 0;
-	this.channel4consecutive = true;
-	this.channel4BitRange = 0x7FFF;
-	this.channel4VolumeShifter = 15;
-	this.channel1FrequencyCounter = 0x200;
-	this.channel2FrequencyCounter = 0x200;
-	this.channel3Counter = 0x800;
-	this.channel3FrequencyPeriod = 0x800;
-	this.channel3lastSampleLookup = 0;
-	this.channel4lastSampleLookup = 0;
-	this.VinLeftChannelMasterVolume = 8;
-	this.VinRightChannelMasterVolume = 8;
-	this.soundMasterEnabled = true;
-	this.leftChannel1 = true;
-	this.leftChannel2 = true;
-	this.leftChannel3 = true;
-	this.leftChannel4 = true;
-	this.rightChannel1 = true;
-	this.rightChannel2 = true;
-	this.rightChannel3 = false;
-	this.rightChannel4 = false;
 	this.DIVTicks = 27044;
 	this.LCDTicks = 160;
 	this.timerTicks = 0;
@@ -4589,18 +4288,6 @@ GameBoyCore.prototype.initBootstrap = function () {
 	this.registerE = 0;
 	this.FZero = this.FSubtract = this.FHalfCarry = this.FCarry = false;
 	this.registersHL = 0;
-	this.leftChannel1 = false;
-	this.leftChannel2 = false;
-	this.leftChannel3 = false;
-	this.leftChannel4 = false;
-	this.rightChannel1 = false;
-	this.rightChannel2 = false;
-	this.rightChannel3 = false;
-	this.rightChannel4 = false;
-	this.channel2frequency = this.channel1frequency = 0;
-	this.channel4consecutive = this.channel2consecutive = this.channel1consecutive = false;
-	this.VinLeftChannelMasterVolume = 8;
-	this.VinRightChannelMasterVolume = 8;
 	this.memory[0xFF00] = 0xF;	//Set the joypad state.
 }
 GameBoyCore.prototype.ROMLoad = function () {
@@ -4931,9 +4618,6 @@ GameBoyCore.prototype.initializeTiming = function () {
 GameBoyCore.prototype.setSpeed = function (speed) {
 	this.emulatorSpeed = speed;
 	this.initializeTiming();
-	if (this.audioHandle) {
-		this.initSound();
-	}
 }
 GameBoyCore.prototype.setupRAM = function () {
 	//Setup the auxilliary/switchable RAM:
@@ -5081,643 +4765,13 @@ GameBoyCore.prototype.GyroEvent = function (x, y) {
 	this.highY = y >> 8;
 	this.lowY = y & 0xFF;
 }
-GameBoyCore.prototype.initSound = function () {
-	this.audioResamplerFirstPassFactor = Math.max(Math.min(Math.floor(this.clocksPerSecond / 44100), Math.floor(0xFFFF / 0x1E0)), 1);
-	this.downSampleInputDivider = 1 / (this.audioResamplerFirstPassFactor * 0xF0);
-	if (settings[0]) {
-		this.audioHandle = new XAudioServer(2, this.clocksPerSecond / this.audioResamplerFirstPassFactor, 0, Math.max(this.baseCPUCyclesPerIteration * settings[8] / this.audioResamplerFirstPassFactor, 8192) << 1, null, settings[3], function () {
-			settings[0] = false;
-		});
-		this.initAudioBuffer();
-	}
-	else if (this.audioHandle) {
-		//Mute the audio output, as it has an immediate silencing effect:
-		this.audioHandle.changeVolume(0);
-	}
-}
-GameBoyCore.prototype.changeVolume = function () {
-	if (settings[0] && this.audioHandle) {
-		this.audioHandle.changeVolume(settings[3]);
-	}
-}
-GameBoyCore.prototype.initAudioBuffer = function () {
-	this.audioIndex = 0;
-	this.audioDestinationPosition = 0;
-	this.downsampleInput = 0;
-	this.bufferContainAmount = Math.max(this.baseCPUCyclesPerIteration * settings[7] / this.audioResamplerFirstPassFactor, 4096) << 1;
-	this.numSamplesTotal = (this.baseCPUCyclesPerIteration / this.audioResamplerFirstPassFactor) << 1;
-	this.audioBuffer = this.getTypedArray(this.numSamplesTotal, 0, "float32");
-}
-GameBoyCore.prototype.intializeWhiteNoise = function () {
-	//Noise Sample Tables:
-	var randomFactor = 1;
-	//15-bit LSFR Cache Generation:
-	this.LSFR15Table = this.getTypedArray(0x80000, 0, "int8");
-	var LSFR = 0x7FFF;	//Seed value has all its bits set.
-	var LSFRShifted = 0x3FFF;
-	for (var index = 0; index < 0x8000; ++index) {
-		//Normalize the last LSFR value for usage:
-		randomFactor = 1 - (LSFR & 1);	//Docs say it's the inverse.
-		//Cache the different volume level results:
-		this.LSFR15Table[0x08000 | index] = randomFactor;
-		this.LSFR15Table[0x10000 | index] = randomFactor * 0x2;
-		this.LSFR15Table[0x18000 | index] = randomFactor * 0x3;
-		this.LSFR15Table[0x20000 | index] = randomFactor * 0x4;
-		this.LSFR15Table[0x28000 | index] = randomFactor * 0x5;
-		this.LSFR15Table[0x30000 | index] = randomFactor * 0x6;
-		this.LSFR15Table[0x38000 | index] = randomFactor * 0x7;
-		this.LSFR15Table[0x40000 | index] = randomFactor * 0x8;
-		this.LSFR15Table[0x48000 | index] = randomFactor * 0x9;
-		this.LSFR15Table[0x50000 | index] = randomFactor * 0xA;
-		this.LSFR15Table[0x58000 | index] = randomFactor * 0xB;
-		this.LSFR15Table[0x60000 | index] = randomFactor * 0xC;
-		this.LSFR15Table[0x68000 | index] = randomFactor * 0xD;
-		this.LSFR15Table[0x70000 | index] = randomFactor * 0xE;
-		this.LSFR15Table[0x78000 | index] = randomFactor * 0xF;
-		//Recompute the LSFR algorithm:
-		LSFRShifted = LSFR >> 1;
-		LSFR = LSFRShifted | (((LSFRShifted ^ LSFR) & 0x1) << 14);
-	}
-	//7-bit LSFR Cache Generation:
-	this.LSFR7Table = this.getTypedArray(0x800, 0, "int8");
-	LSFR = 0x7F;	//Seed value has all its bits set.
-	for (index = 0; index < 0x80; ++index) {
-		//Normalize the last LSFR value for usage:
-		randomFactor = 1 - (LSFR & 1);	//Docs say it's the inverse.
-		//Cache the different volume level results:
-		this.LSFR7Table[0x080 | index] = randomFactor;
-		this.LSFR7Table[0x100 | index] = randomFactor * 0x2;
-		this.LSFR7Table[0x180 | index] = randomFactor * 0x3;
-		this.LSFR7Table[0x200 | index] = randomFactor * 0x4;
-		this.LSFR7Table[0x280 | index] = randomFactor * 0x5;
-		this.LSFR7Table[0x300 | index] = randomFactor * 0x6;
-		this.LSFR7Table[0x380 | index] = randomFactor * 0x7;
-		this.LSFR7Table[0x400 | index] = randomFactor * 0x8;
-		this.LSFR7Table[0x480 | index] = randomFactor * 0x9;
-		this.LSFR7Table[0x500 | index] = randomFactor * 0xA;
-		this.LSFR7Table[0x580 | index] = randomFactor * 0xB;
-		this.LSFR7Table[0x600 | index] = randomFactor * 0xC;
-		this.LSFR7Table[0x680 | index] = randomFactor * 0xD;
-		this.LSFR7Table[0x700 | index] = randomFactor * 0xE;
-		this.LSFR7Table[0x780 | index] = randomFactor * 0xF;
-		//Recompute the LSFR algorithm:
-		LSFRShifted = LSFR >> 1;
-		LSFR = LSFRShifted | (((LSFRShifted ^ LSFR) & 0x1) << 6);
-	}
-	//Set the default noise table:
-	this.noiseSampleTable = this.LSFR15Table;
-}
-GameBoyCore.prototype.audioUnderrunAdjustment = function () {
-	if (settings[0]) {
-		var underrunAmount = this.audioHandle.remainingBuffer();
-		if (typeof underrunAmount == "number") {
-			underrunAmount = this.bufferContainAmount - Math.max(underrunAmount, 0);
-			if (underrunAmount > 0) {
-				this.recalculateIterationClockLimitForAudio((underrunAmount >> 1) * this.audioResamplerFirstPassFactor);
-			}
-		}
-	}
-}
-GameBoyCore.prototype.initializeAudioStartState = function () {
-	this.channel1FrequencyTracker = 0x2000;
-	this.channel1DutyTracker = 0;
-	this.channel1CachedDuty = this.dutyLookup[2];
-	this.channel1totalLength = 0;
-	this.channel1envelopeVolume = 0;
-	this.channel1envelopeType = false;
-	this.channel1envelopeSweeps = 0;
-	this.channel1envelopeSweepsLast = 0;
-	this.channel1consecutive = true;
-	this.channel1frequency = 0;
-	this.channel1SweepFault = false;
-	this.channel1ShadowFrequency = 0;
-	this.channel1timeSweep = 1;
-	this.channel1lastTimeSweep = 0;
-	this.channel1Swept = false;
-	this.channel1frequencySweepDivider = 0;
-	this.channel1decreaseSweep = false;
-	this.channel2FrequencyTracker = 0x2000;
-	this.channel2DutyTracker = 0;
-	this.channel2CachedDuty = this.dutyLookup[2];
-	this.channel2totalLength = 0;
-	this.channel2envelopeVolume = 0;
-	this.channel2envelopeType = false;
-	this.channel2envelopeSweeps = 0;
-	this.channel2envelopeSweepsLast = 0;
-	this.channel2consecutive = true;
-	this.channel2frequency = 0;
-	this.channel3canPlay = false;
-	this.channel3totalLength = 0;
-	this.channel3patternType = 4;
-	this.channel3frequency = 0;
-	this.channel3consecutive = true;
-	this.channel3Counter = 0x800;
-	this.channel4FrequencyPeriod = 8;
-	this.channel4totalLength = 0;
-	this.channel4envelopeVolume = 0;
-	this.channel4currentVolume = 0;
-	this.channel4envelopeType = false;
-	this.channel4envelopeSweeps = 0;
-	this.channel4envelopeSweepsLast = 0;
-	this.channel4consecutive = true;
-	this.channel4BitRange = 0x7FFF;
-	this.noiseSampleTable = this.LSFR15Table;
-	this.channel4VolumeShifter = 15;
-	this.channel1FrequencyCounter = 0x2000;
-	this.channel2FrequencyCounter = 0x2000;
-	this.channel3Counter = 0x800;
-	this.channel3FrequencyPeriod = 0x800;
-	this.channel3lastSampleLookup = 0;
-	this.channel4lastSampleLookup = 0;
-	this.VinLeftChannelMasterVolume = 8;
-	this.VinRightChannelMasterVolume = 8;
-	this.mixerOutputCache = 0;
-	this.sequencerClocks = 0x2000;
-	this.sequencePosition = 0;
-	this.channel4FrequencyPeriod = 8;
-	this.channel4Counter = 8;
-	this.cachedChannel3Sample = 0;
-	this.cachedChannel4Sample = 0;
-	this.channel1Enabled = false;
-	this.channel2Enabled = false;
-	this.channel3Enabled = false;
-	this.channel4Enabled = false;
-	this.channel1canPlay = false;
-	this.channel2canPlay = false;
-	this.channel4canPlay = false;
-	this.audioClocksUntilNextEvent = 1;
-	this.audioClocksUntilNextEventCounter = 1;
-	this.channel1OutputLevelCache();
-	this.channel2OutputLevelCache();
-	this.channel3OutputLevelCache();
-	this.channel4OutputLevelCache();
-	this.noiseSampleTable = this.LSFR15Table;
-}
-GameBoyCore.prototype.outputAudio = function () {
-	this.audioBuffer[this.audioDestinationPosition++] = (this.downsampleInput >>> 16) * this.downSampleInputDivider - 1;
-	this.audioBuffer[this.audioDestinationPosition++] = (this.downsampleInput & 0xFFFF) * this.downSampleInputDivider - 1;
-	if (this.audioDestinationPosition == this.numSamplesTotal) {
-		this.audioHandle.writeAudioNoCallback(this.audioBuffer);
-		this.audioDestinationPosition = 0;
-	}
-	this.downsampleInput = 0;
-}
-//Below are the audio generation functions timed against the CPU:
-GameBoyCore.prototype.generateAudio = function (numSamples) {
-	var multiplier = 0;
-	if (this.soundMasterEnabled && !this.CPUStopped) {
-		for (var clockUpTo = 0; numSamples > 0;) {
-			clockUpTo = Math.min(this.audioClocksUntilNextEventCounter, this.sequencerClocks, numSamples);
-			this.audioClocksUntilNextEventCounter -= clockUpTo;
-			this.sequencerClocks -= clockUpTo;
-			numSamples -= clockUpTo;
-			while (clockUpTo > 0) {
-				multiplier = Math.min(clockUpTo, this.audioResamplerFirstPassFactor - this.audioIndex);
-				clockUpTo -= multiplier;
-				this.audioIndex += multiplier;
-				this.downsampleInput += this.mixerOutputCache * multiplier;
-				if (this.audioIndex == this.audioResamplerFirstPassFactor) {
-					this.audioIndex = 0;
-					this.outputAudio();
-				}
-			}
-			if (this.sequencerClocks == 0) {
-				this.audioComputeSequencer();
-				this.sequencerClocks = 0x2000;
-			}
-			if (this.audioClocksUntilNextEventCounter == 0) {
-				this.computeAudioChannels();
-			}
-		}
-	}
-	else {
-		//SILENT OUTPUT:
-		while (numSamples > 0) {
-			multiplier = Math.min(numSamples, this.audioResamplerFirstPassFactor - this.audioIndex);
-			numSamples -= multiplier;
-			this.audioIndex += multiplier;
-			if (this.audioIndex == this.audioResamplerFirstPassFactor) {
-				this.audioIndex = 0;
-				this.outputAudio();
-			}
-		}
-	}
-}
-//Generate audio, but don't actually output it (Used for when sound is disabled by user/browser):
-GameBoyCore.prototype.generateAudioFake = function (numSamples) {
-	if (this.soundMasterEnabled && !this.CPUStopped) {
-		for (var clockUpTo = 0; numSamples > 0;) {
-			clockUpTo = Math.min(this.audioClocksUntilNextEventCounter, this.sequencerClocks, numSamples);
-			this.audioClocksUntilNextEventCounter -= clockUpTo;
-			this.sequencerClocks -= clockUpTo;
-			numSamples -= clockUpTo;
-			if (this.sequencerClocks == 0) {
-				this.audioComputeSequencer();
-				this.sequencerClocks = 0x2000;
-			}
-			if (this.audioClocksUntilNextEventCounter == 0) {
-				this.computeAudioChannels();
-			}
-		}
-	}
-}
-GameBoyCore.prototype.audioJIT = function () {
-	//Audio Sample Generation Timing:
-	if (settings[0]) {
-		this.generateAudio(this.audioTicks);
-	}
-	else {
-		this.generateAudioFake(this.audioTicks);
-	}
-	this.audioTicks = 0;
-}
-GameBoyCore.prototype.audioComputeSequencer = function () {
-	switch (this.sequencePosition++) {
-		case 0:
-			this.clockAudioLength();
-			break;
-		case 2:
-			this.clockAudioLength();
-			this.clockAudioSweep();
-			break;
-		case 4:
-			this.clockAudioLength();
-			break;
-		case 6:
-			this.clockAudioLength();
-			this.clockAudioSweep();
-			break;
-		case 7:
-			this.clockAudioEnvelope();
-			this.sequencePosition = 0;
-	}
-}
-GameBoyCore.prototype.clockAudioLength = function () {
-	//Channel 1:
-	if (this.channel1totalLength > 1) {
-		--this.channel1totalLength;
-	}
-	else if (this.channel1totalLength == 1) {
-		this.channel1totalLength = 0;
-		this.channel1EnableCheck();
-		this.memory[0xFF26] &= 0xFE;	//Channel #1 On Flag Off
-	}
-	//Channel 2:
-	if (this.channel2totalLength > 1) {
-		--this.channel2totalLength;
-	}
-	else if (this.channel2totalLength == 1) {
-		this.channel2totalLength = 0;
-		this.channel2EnableCheck();
-		this.memory[0xFF26] &= 0xFD;	//Channel #2 On Flag Off
-	}
-	//Channel 3:
-	if (this.channel3totalLength > 1) {
-		--this.channel3totalLength;
-	}
-	else if (this.channel3totalLength == 1) {
-		this.channel3totalLength = 0;
-		this.channel3EnableCheck();
-		this.memory[0xFF26] &= 0xFB;	//Channel #3 On Flag Off
-	}
-	//Channel 4:
-	if (this.channel4totalLength > 1) {
-		--this.channel4totalLength;
-	}
-	else if (this.channel4totalLength == 1) {
-		this.channel4totalLength = 0;
-		this.channel4EnableCheck();
-		this.memory[0xFF26] &= 0xF7;	//Channel #4 On Flag Off
-	}
-}
-GameBoyCore.prototype.clockAudioSweep = function () {
-	//Channel 1:
-	if (!this.channel1SweepFault && this.channel1timeSweep > 0) {
-		if (--this.channel1timeSweep == 0) {
-			this.runAudioSweep();
-		}
-	}
-}
-GameBoyCore.prototype.runAudioSweep = function () {
-	//Channel 1:
-	if (this.channel1lastTimeSweep > 0) {
-		if (this.channel1frequencySweepDivider > 0) {
-			this.channel1Swept = true;
-			if (this.channel1decreaseSweep) {
-				this.channel1ShadowFrequency -= this.channel1ShadowFrequency >> this.channel1frequencySweepDivider;
-				this.channel1frequency = this.channel1ShadowFrequency & 0x7FF;
-				this.channel1FrequencyTracker = (0x800 - this.channel1frequency) << 2;
-			}
-			else {
-				this.channel1ShadowFrequency += this.channel1ShadowFrequency >> this.channel1frequencySweepDivider;
-				this.channel1frequency = this.channel1ShadowFrequency;
-				if (this.channel1ShadowFrequency <= 0x7FF) {
-					this.channel1FrequencyTracker = (0x800 - this.channel1frequency) << 2;
-					//Run overflow check twice:
-					if ((this.channel1ShadowFrequency + (this.channel1ShadowFrequency >> this.channel1frequencySweepDivider)) > 0x7FF) {
-						this.channel1SweepFault = true;
-						this.channel1EnableCheck();
-						this.memory[0xFF26] &= 0xFE;	//Channel #1 On Flag Off
-					}
-				}
-				else {
-					this.channel1frequency &= 0x7FF;
-					this.channel1SweepFault = true;
-					this.channel1EnableCheck();
-					this.memory[0xFF26] &= 0xFE;	//Channel #1 On Flag Off
-				}
-			}
-			this.channel1timeSweep = this.channel1lastTimeSweep;
-		}
-		else {
-			//Channel has sweep disabled and timer becomes a length counter:
-			this.channel1SweepFault = true;
-			this.channel1EnableCheck();
-		}
-	}
-}
-GameBoyCore.prototype.channel1AudioSweepPerformDummy = function () {
-	//Channel 1:
-	if (this.channel1frequencySweepDivider > 0) {
-		if (!this.channel1decreaseSweep) {
-			var channel1ShadowFrequency = this.channel1ShadowFrequency + (this.channel1ShadowFrequency >> this.channel1frequencySweepDivider);
-			if (channel1ShadowFrequency <= 0x7FF) {
-				//Run overflow check twice:
-				if ((channel1ShadowFrequency + (channel1ShadowFrequency >> this.channel1frequencySweepDivider)) > 0x7FF) {
-					this.channel1SweepFault = true;
-					this.channel1EnableCheck();
-					this.memory[0xFF26] &= 0xFE;	//Channel #1 On Flag Off
-				}
-			}
-			else {
-				this.channel1SweepFault = true;
-				this.channel1EnableCheck();
-				this.memory[0xFF26] &= 0xFE;	//Channel #1 On Flag Off
-			}
-		}
-	}
-}
-GameBoyCore.prototype.clockAudioEnvelope = function () {
-	//Channel 1:
-	if (this.channel1envelopeSweepsLast > -1) {
-		if (this.channel1envelopeSweeps > 0) {
-			--this.channel1envelopeSweeps;
-		}
-		else {
-			if (!this.channel1envelopeType) {
-				if (this.channel1envelopeVolume > 0) {
-					--this.channel1envelopeVolume;
-					this.channel1envelopeSweeps = this.channel1envelopeSweepsLast;
-					this.channel1OutputLevelCache();
-				}
-				else {
-					this.channel1envelopeSweepsLast = -1;
-				}
-			}
-			else if (this.channel1envelopeVolume < 0xF) {
-				++this.channel1envelopeVolume;
-				this.channel1envelopeSweeps = this.channel1envelopeSweepsLast;
-				this.channel1OutputLevelCache();
-			}
-			else {
-				this.channel1envelopeSweepsLast = -1;
-			}
-		}
-	}
-	//Channel 2:
-	if (this.channel2envelopeSweepsLast > -1) {
-		if (this.channel2envelopeSweeps > 0) {
-			--this.channel2envelopeSweeps;
-		}
-		else {
-			if (!this.channel2envelopeType) {
-				if (this.channel2envelopeVolume > 0) {
-					--this.channel2envelopeVolume;
-					this.channel2envelopeSweeps = this.channel2envelopeSweepsLast;
-					this.channel2OutputLevelCache();
-				}
-				else {
-					this.channel2envelopeSweepsLast = -1;
-				}
-			}
-			else if (this.channel2envelopeVolume < 0xF) {
-				++this.channel2envelopeVolume;
-				this.channel2envelopeSweeps = this.channel2envelopeSweepsLast;
-				this.channel2OutputLevelCache();
-			}
-			else {
-				this.channel2envelopeSweepsLast = -1;
-			}
-		}
-	}
-	//Channel 4:
-	if (this.channel4envelopeSweepsLast > -1) {
-		if (this.channel4envelopeSweeps > 0) {
-			--this.channel4envelopeSweeps;
-		}
-		else {
-			if (!this.channel4envelopeType) {
-				if (this.channel4envelopeVolume > 0) {
-					this.channel4currentVolume = --this.channel4envelopeVolume << this.channel4VolumeShifter;
-					this.channel4envelopeSweeps = this.channel4envelopeSweepsLast;
-					this.channel4UpdateCache();
-				}
-				else {
-					this.channel4envelopeSweepsLast = -1;
-				}
-			}
-			else if (this.channel4envelopeVolume < 0xF) {
-				this.channel4currentVolume = ++this.channel4envelopeVolume << this.channel4VolumeShifter;
-				this.channel4envelopeSweeps = this.channel4envelopeSweepsLast;
-				this.channel4UpdateCache();
-			}
-			else {
-				this.channel4envelopeSweepsLast = -1;
-			}
-		}
-	}
-}
-GameBoyCore.prototype.computeAudioChannels = function () {
-	//Clock down the four audio channels to the next closest audio event:
-	this.channel1FrequencyCounter -= this.audioClocksUntilNextEvent;
-	this.channel2FrequencyCounter -= this.audioClocksUntilNextEvent;
-	this.channel3Counter -= this.audioClocksUntilNextEvent;
-	this.channel4Counter -= this.audioClocksUntilNextEvent;
-	//Channel 1 counter:
-	if (this.channel1FrequencyCounter == 0) {
-		this.channel1FrequencyCounter = this.channel1FrequencyTracker;
-		this.channel1DutyTracker = (this.channel1DutyTracker + 1) & 0x7;
-		this.channel1OutputLevelTrimaryCache();
-	}
-	//Channel 2 counter:
-	if (this.channel2FrequencyCounter == 0) {
-		this.channel2FrequencyCounter = this.channel2FrequencyTracker;
-		this.channel2DutyTracker = (this.channel2DutyTracker + 1) & 0x7;
-		this.channel2OutputLevelTrimaryCache();
-	}
-	//Channel 3 counter:
-	if (this.channel3Counter == 0) {
-		if (this.channel3canPlay) {
-			this.channel3lastSampleLookup = (this.channel3lastSampleLookup + 1) & 0x1F;
-		}
-		this.channel3Counter = this.channel3FrequencyPeriod;
-		this.channel3UpdateCache();
-	}
-	//Channel 4 counter:
-	if (this.channel4Counter == 0) {
-		this.channel4lastSampleLookup = (this.channel4lastSampleLookup + 1) & this.channel4BitRange;
-		this.channel4Counter = this.channel4FrequencyPeriod;
-		this.channel4UpdateCache();
-	}
-	//Find the number of clocks to next closest counter event:
-	this.audioClocksUntilNextEventCounter = this.audioClocksUntilNextEvent = Math.min(this.channel1FrequencyCounter, this.channel2FrequencyCounter, this.channel3Counter, this.channel4Counter);
-}
-GameBoyCore.prototype.channel1EnableCheck = function () {
-	this.channel1Enabled = ((this.channel1consecutive || this.channel1totalLength > 0) && !this.channel1SweepFault && this.channel1canPlay);
-	this.channel1OutputLevelSecondaryCache();
-}
-GameBoyCore.prototype.channel1VolumeEnableCheck = function () {
-	this.channel1canPlay = (this.memory[0xFF12] > 7);
-	this.channel1EnableCheck();
-	this.channel1OutputLevelSecondaryCache();
-}
-GameBoyCore.prototype.channel1OutputLevelCache = function () {
-	this.channel1currentSampleLeft = (this.leftChannel1) ? this.channel1envelopeVolume : 0;
-	this.channel1currentSampleRight = (this.rightChannel1) ? this.channel1envelopeVolume : 0;
-	this.channel1OutputLevelSecondaryCache();
-}
-GameBoyCore.prototype.channel1OutputLevelSecondaryCache = function () {
-	if (this.channel1Enabled) {
-		this.channel1currentSampleLeftSecondary = this.channel1currentSampleLeft;
-		this.channel1currentSampleRightSecondary = this.channel1currentSampleRight;
-	}
-	else {
-		this.channel1currentSampleLeftSecondary = 0;
-		this.channel1currentSampleRightSecondary = 0;
-	}
-	this.channel1OutputLevelTrimaryCache();
-}
-GameBoyCore.prototype.channel1OutputLevelTrimaryCache = function () {
-	if (this.channel1CachedDuty[this.channel1DutyTracker] && settings[14][0]) {
-		this.channel1currentSampleLeftTrimary = this.channel1currentSampleLeftSecondary;
-		this.channel1currentSampleRightTrimary = this.channel1currentSampleRightSecondary;
-	}
-	else {
-		this.channel1currentSampleLeftTrimary = 0;
-		this.channel1currentSampleRightTrimary = 0;
-	}
-	this.mixerOutputLevelCache();
-}
-GameBoyCore.prototype.channel2EnableCheck = function () {
-	this.channel2Enabled = ((this.channel2consecutive || this.channel2totalLength > 0) && this.channel2canPlay);
-	this.channel2OutputLevelSecondaryCache();
-}
-GameBoyCore.prototype.channel2VolumeEnableCheck = function () {
-	this.channel2canPlay = (this.memory[0xFF17] > 7);
-	this.channel2EnableCheck();
-	this.channel2OutputLevelSecondaryCache();
-}
-GameBoyCore.prototype.channel2OutputLevelCache = function () {
-	this.channel2currentSampleLeft = (this.leftChannel2) ? this.channel2envelopeVolume : 0;
-	this.channel2currentSampleRight = (this.rightChannel2) ? this.channel2envelopeVolume : 0;
-	this.channel2OutputLevelSecondaryCache();
-}
-GameBoyCore.prototype.channel2OutputLevelSecondaryCache = function () {
-	if (this.channel2Enabled) {
-		this.channel2currentSampleLeftSecondary = this.channel2currentSampleLeft;
-		this.channel2currentSampleRightSecondary = this.channel2currentSampleRight;
-	}
-	else {
-		this.channel2currentSampleLeftSecondary = 0;
-		this.channel2currentSampleRightSecondary = 0;
-	}
-	this.channel2OutputLevelTrimaryCache();
-}
-GameBoyCore.prototype.channel2OutputLevelTrimaryCache = function () {
-	if (this.channel2CachedDuty[this.channel2DutyTracker] && settings[14][1]) {
-		this.channel2currentSampleLeftTrimary = this.channel2currentSampleLeftSecondary;
-		this.channel2currentSampleRightTrimary = this.channel2currentSampleRightSecondary;
-	}
-	else {
-		this.channel2currentSampleLeftTrimary = 0;
-		this.channel2currentSampleRightTrimary = 0;
-	}
-	this.mixerOutputLevelCache();
-}
-GameBoyCore.prototype.channel3EnableCheck = function () {
-	this.channel3Enabled = (/*this.channel3canPlay && */(this.channel3consecutive || this.channel3totalLength > 0));
-	this.channel3OutputLevelSecondaryCache();
-}
-GameBoyCore.prototype.channel3OutputLevelCache = function () {
-	this.channel3currentSampleLeft = (this.leftChannel3) ? this.cachedChannel3Sample : 0;
-	this.channel3currentSampleRight = (this.rightChannel3) ? this.cachedChannel3Sample : 0;
-	this.channel3OutputLevelSecondaryCache();
-}
-GameBoyCore.prototype.channel3OutputLevelSecondaryCache = function () {
-	if (this.channel3Enabled && settings[14][2]) {
-		this.channel3currentSampleLeftSecondary = this.channel3currentSampleLeft;
-		this.channel3currentSampleRightSecondary = this.channel3currentSampleRight;
-	}
-	else {
-		this.channel3currentSampleLeftSecondary = 0;
-		this.channel3currentSampleRightSecondary = 0;
-	}
-	this.mixerOutputLevelCache();
-}
-GameBoyCore.prototype.channel4EnableCheck = function () {
-	this.channel4Enabled = ((this.channel4consecutive || this.channel4totalLength > 0) && this.channel4canPlay);
-	this.channel4OutputLevelSecondaryCache();
-}
-GameBoyCore.prototype.channel4VolumeEnableCheck = function () {
-	this.channel4canPlay = (this.memory[0xFF21] > 7);
-	this.channel4EnableCheck();
-	this.channel4OutputLevelSecondaryCache();
-}
-GameBoyCore.prototype.channel4OutputLevelCache = function () {
-	this.channel4currentSampleLeft = (this.leftChannel4) ? this.cachedChannel4Sample : 0;
-	this.channel4currentSampleRight = (this.rightChannel4) ? this.cachedChannel4Sample : 0;
-	this.channel4OutputLevelSecondaryCache();
-}
-GameBoyCore.prototype.channel4OutputLevelSecondaryCache = function () {
-	if (this.channel4Enabled && settings[14][3]) {
-		this.channel4currentSampleLeftSecondary = this.channel4currentSampleLeft;
-		this.channel4currentSampleRightSecondary = this.channel4currentSampleRight;
-	}
-	else {
-		this.channel4currentSampleLeftSecondary = 0;
-		this.channel4currentSampleRightSecondary = 0;
-	}
-	this.mixerOutputLevelCache();
-}
-GameBoyCore.prototype.mixerOutputLevelCache = function () {
-	this.mixerOutputCache = ((((this.channel1currentSampleLeftTrimary + this.channel2currentSampleLeftTrimary + this.channel3currentSampleLeftSecondary + this.channel4currentSampleLeftSecondary) * this.VinLeftChannelMasterVolume) << 16) |
-	((this.channel1currentSampleRightTrimary + this.channel2currentSampleRightTrimary + this.channel3currentSampleRightSecondary + this.channel4currentSampleRightSecondary) * this.VinRightChannelMasterVolume));
-}
-GameBoyCore.prototype.channel3UpdateCache = function () {
-	this.cachedChannel3Sample = this.channel3PCM[this.channel3lastSampleLookup] >> this.channel3patternType;
-	this.channel3OutputLevelCache();
-}
-GameBoyCore.prototype.channel3WriteRAM = function (address, data) {
-	if (this.channel3canPlay) {
-		this.audioJIT();
-		//address = this.channel3lastSampleLookup >> 1;
-	}
-	this.memory[0xFF30 | address] = data;
-	address <<= 1;
-	this.channel3PCM[address] = data >> 4;
-	this.channel3PCM[address | 1] = data & 0xF;
-}
-GameBoyCore.prototype.channel4UpdateCache = function () {
-	this.cachedChannel4Sample = this.noiseSampleTable[this.channel4currentVolume | this.channel4lastSampleLookup];
-	this.channel4OutputLevelCache();
-}
+
 GameBoyCore.prototype.run = function () {
 	//The preprocessing before the actual iteration loop:
 	if ((this.stopEmulator & 2) == 0) {
 		if ((this.stopEmulator & 1) == 1) {
 			if (!this.CPUStopped) {
 				this.stopEmulator = 0;
-				this.audioUnderrunAdjustment();
 				this.clockUpdate();			//RTC clocking.
 				if (!this.halt) {
 					this.executeIteration();
@@ -5737,9 +4791,6 @@ GameBoyCore.prototype.run = function () {
 				this.requestDraw();
 			}
 			else {
-				this.audioUnderrunAdjustment();
-				this.audioTicks += this.CPUCyclesTotal;
-				this.audioJIT();
 				this.stopEmulator |= 1;			//End current loop.
 			}
 		}
@@ -5786,7 +4837,6 @@ GameBoyCore.prototype.executeIteration = function () {
 		this.LCDCONTROL[this.actualScanLine](this);					//Scan Line and STAT Mode Control
 		//Single-speed relative timing for A/V emulation:
 		timedTicks = this.CPUTicks >> this.doubleSpeedShifter;		//CPU clocking can be updated from the LCD handling.
-		this.audioTicks += timedTicks;								//Audio Timing
 		this.emulatorTicks += timedTicks;							//Emulator Timing
 		//CPU Timers:
 		this.DIVTicks += this.CPUTicks;								//DIV Timing
@@ -5823,7 +4873,6 @@ GameBoyCore.prototype.executeIteration = function () {
 }
 GameBoyCore.prototype.iterationEndRoutine = function () {
 	if ((this.stopEmulator & 0x1) == 0) {
-		this.audioJIT();	//Make sure we at least output once per iteration.
 		//Update DIV Alignment (Integer overflow safety):
 		this.memory[0xFF04] = (this.memory[0xFF04] + (this.DIVTicks >> 8)) & 0xFF;
 		this.DIVTicks &= 0xFF;
@@ -5837,18 +4886,11 @@ GameBoyCore.prototype.iterationEndRoutine = function () {
 GameBoyCore.prototype.handleSTOP = function () {
 	this.CPUStopped = true;						//Stop CPU until joypad input changes.
 	this.iterationEndRoutine();
-	if (this.emulatorTicks < 0) {
-		this.audioTicks -= this.emulatorTicks;
-		this.audioJIT();
-	}
 }
 GameBoyCore.prototype.recalculateIterationClockLimit = function () {
 	var endModulus = this.CPUCyclesTotalCurrent % 4;
 	this.CPUCyclesTotal = this.CPUCyclesTotalBase + this.CPUCyclesTotalCurrent - endModulus;
 	this.CPUCyclesTotalCurrent = endModulus;
-}
-GameBoyCore.prototype.recalculateIterationClockLimitForAudio = function (audioClocking) {
-	this.CPUCyclesTotal += Math.min((audioClocking >> 2) << 2, this.CPUCyclesTotalBase << 1);
 }
 GameBoyCore.prototype.scanLineMode2 = function () {	//OAM Search Period
 	if (this.STATTracker != 1) {
@@ -5956,7 +4998,6 @@ GameBoyCore.prototype.updateCore = function () {
 	this.LCDCONTROL[this.actualScanLine](this);					//Scan Line and STAT Mode Control
 	//Single-speed relative timing for A/V emulation:
 	var timedTicks = this.CPUTicks >> this.doubleSpeedShifter;	//CPU clocking can be updated from the LCD handling.
-	this.audioTicks += timedTicks;								//Audio Timing
 	this.emulatorTicks += timedTicks;							//Emulator Timing
 	//CPU Timers:
 	this.DIVTicks += this.CPUTicks;								//DIV Timing
@@ -7700,7 +6741,6 @@ GameBoyCore.prototype.memoryReadJumpCompile = function () {
 					break;
 				case 0xFF26:
 					this.memoryHighReader[0x26] = this.memoryReader[0xFF26] = function (parentObj, address) {
-						parentObj.audioJIT();
 						return 0x70 | parentObj.memory[0xFF26];
 					}
 					break;
@@ -7731,12 +6771,6 @@ GameBoyCore.prototype.memoryReadJumpCompile = function () {
 				case 0xFF3D:
 				case 0xFF3E:
 				case 0xFF3F:
-					this.memoryReader[index] = function (parentObj, address) {
-						return (parentObj.channel3canPlay) ? parentObj.memory[0xFF00 | (parentObj.channel3lastSampleLookup >> 1)] : parentObj.memory[address];
-					}
-					this.memoryHighReader[index & 0xFF] = function (parentObj, address) {
-						return (parentObj.channel3canPlay) ? parentObj.memory[0xFF00 | (parentObj.channel3lastSampleLookup >> 1)] : parentObj.memory[0xFF00 | address];
-					}
 					break;
 				case 0xFF40:
 					this.memoryHighReader[0x40] = this.memoryHighReadNormal;
@@ -7904,20 +6938,6 @@ GameBoyCore.prototype.memoryReadJumpCompile = function () {
 						return 0x8F | parentObj.memory[0xFF75];
 					}
 					break;
-                case 0xFF76:
-                    //Undocumented realtime PCM amplitude readback:
-                    this.memoryHighReader[0x76] = this.memoryReader[0xFF76] = function (parentObj, address) {
-                        parentObj.audioJIT();
-                        return (parentObj.channel2envelopeVolume << 4) | parentObj.channel1envelopeVolume;
-                    }
-                    break;
-                case 0xFF77:
-                    //Undocumented realtime PCM amplitude readback:
-                    this.memoryHighReader[0x77] = this.memoryReader[0xFF77] = function (parentObj, address) {
-                        parentObj.audioJIT();
-                        return (parentObj.channel4envelopeVolume << 4) | parentObj.channel3envelopeVolume;
-                    }
-                    break;
 				case 0xFF78:
 				case 0xFF79:
 				case 0xFF7A:
@@ -8614,373 +7634,6 @@ GameBoyCore.prototype.registerWriteJumpCompile = function () {
 		parentObj.interruptsRequested = data;
 		parentObj.checkIRQMatching();
 	}
-	//NR10:
-	this.memoryHighWriter[0x10] = this.memoryWriter[0xFF10] = function (parentObj, address, data) {
-		if (parentObj.soundMasterEnabled) {
-			parentObj.audioJIT();
-			if (parentObj.channel1decreaseSweep && (data & 0x08) == 0) {
-				if (parentObj.channel1Swept) {
-					parentObj.channel1SweepFault = true;
-				}
-			}
-			parentObj.channel1lastTimeSweep = (data & 0x70) >> 4;
-			parentObj.channel1frequencySweepDivider = data & 0x07;
-			parentObj.channel1decreaseSweep = ((data & 0x08) == 0x08);
-			parentObj.memory[0xFF10] = data;
-			parentObj.channel1EnableCheck();
-		}
-	}
-	//NR11:
-	this.memoryHighWriter[0x11] = this.memoryWriter[0xFF11] = function (parentObj, address, data) {
-		if (parentObj.soundMasterEnabled || !parentObj.cGBC) {
-			if (parentObj.soundMasterEnabled) {
-				parentObj.audioJIT();
-			}
-			else {
-				data &= 0x3F;
-			}
-			parentObj.channel1CachedDuty = parentObj.dutyLookup[data >> 6];
-			parentObj.channel1totalLength = 0x40 - (data & 0x3F);
-			parentObj.memory[0xFF11] = data;
-			parentObj.channel1EnableCheck();
-		}
-	}
-	//NR12:
-	this.memoryHighWriter[0x12] = this.memoryWriter[0xFF12] = function (parentObj, address, data) {
-		if (parentObj.soundMasterEnabled) {
-			parentObj.audioJIT();
-			if (parentObj.channel1Enabled && parentObj.channel1envelopeSweeps == 0) {
-				//Zombie Volume PAPU Bug:
-				if (((parentObj.memory[0xFF12] ^ data) & 0x8) == 0x8) {
-					if ((parentObj.memory[0xFF12] & 0x8) == 0) {
-						if ((parentObj.memory[0xFF12] & 0x7) == 0x7) {
-							parentObj.channel1envelopeVolume += 2;
-						}
-						else {
-							++parentObj.channel1envelopeVolume;
-						}
-					}
-					parentObj.channel1envelopeVolume = (16 - parentObj.channel1envelopeVolume) & 0xF;
-				}
-				else if ((parentObj.memory[0xFF12] & 0xF) == 0x8) {
-					parentObj.channel1envelopeVolume = (1 + parentObj.channel1envelopeVolume) & 0xF;
-				}
-				parentObj.channel1OutputLevelCache();
-			}
-			parentObj.channel1envelopeType = ((data & 0x08) == 0x08);
-			parentObj.memory[0xFF12] = data;
-			parentObj.channel1VolumeEnableCheck();
-		}
-	}
-	//NR13:
-	this.memoryHighWriter[0x13] = this.memoryWriter[0xFF13] = function (parentObj, address, data) {
-		if (parentObj.soundMasterEnabled) {
-			parentObj.audioJIT();
-			parentObj.channel1frequency = (parentObj.channel1frequency & 0x700) | data;
-			parentObj.channel1FrequencyTracker = (0x800 - parentObj.channel1frequency) << 2;
-		}
-	}
-	//NR14:
-	this.memoryHighWriter[0x14] = this.memoryWriter[0xFF14] = function (parentObj, address, data) {
-		if (parentObj.soundMasterEnabled) {
-			parentObj.audioJIT();
-			parentObj.channel1consecutive = ((data & 0x40) == 0x0);
-			parentObj.channel1frequency = ((data & 0x7) << 8) | (parentObj.channel1frequency & 0xFF);
-			parentObj.channel1FrequencyTracker = (0x800 - parentObj.channel1frequency) << 2;
-			if (data > 0x7F) {
-				//Reload 0xFF10:
-				parentObj.channel1timeSweep = parentObj.channel1lastTimeSweep;
-				parentObj.channel1Swept = false;
-				//Reload 0xFF12:
-				var nr12 = parentObj.memory[0xFF12];
-				parentObj.channel1envelopeVolume = nr12 >> 4;
-				parentObj.channel1OutputLevelCache();
-				parentObj.channel1envelopeSweepsLast = (nr12 & 0x7) - 1;
-				if (parentObj.channel1totalLength == 0) {
-					parentObj.channel1totalLength = 0x40;
-				}
-				if (parentObj.channel1lastTimeSweep > 0 || parentObj.channel1frequencySweepDivider > 0) {
-					parentObj.memory[0xFF26] |= 0x1;
-				}
-				else {
-					parentObj.memory[0xFF26] &= 0xFE;
-				}
-				if ((data & 0x40) == 0x40) {
-					parentObj.memory[0xFF26] |= 0x1;
-				}
-				parentObj.channel1ShadowFrequency = parentObj.channel1frequency;
-				//Reset frequency overflow check + frequency sweep type check:
-				parentObj.channel1SweepFault = false;
-				//Supposed to run immediately:
-				parentObj.channel1AudioSweepPerformDummy();
-			}
-			parentObj.channel1EnableCheck();
-			parentObj.memory[0xFF14] = data;
-		}
-	}
-	//NR20 (Unused I/O):
-	this.memoryHighWriter[0x15] = this.memoryWriter[0xFF15] = this.cartIgnoreWrite;
-	//NR21:
-	this.memoryHighWriter[0x16] = this.memoryWriter[0xFF16] = function (parentObj, address, data) {
-		if (parentObj.soundMasterEnabled || !parentObj.cGBC) {
-			if (parentObj.soundMasterEnabled) {
-				parentObj.audioJIT();
-			}
-			else {
-				data &= 0x3F;
-			}
-			parentObj.channel2CachedDuty = parentObj.dutyLookup[data >> 6];
-			parentObj.channel2totalLength = 0x40 - (data & 0x3F);
-			parentObj.memory[0xFF16] = data;
-			parentObj.channel2EnableCheck();
-		}
-	}
-	//NR22:
-	this.memoryHighWriter[0x17] = this.memoryWriter[0xFF17] = function (parentObj, address, data) {
-		if (parentObj.soundMasterEnabled) {
-			parentObj.audioJIT();
-			if (parentObj.channel2Enabled && parentObj.channel2envelopeSweeps == 0) {
-				//Zombie Volume PAPU Bug:
-				if (((parentObj.memory[0xFF17] ^ data) & 0x8) == 0x8) {
-					if ((parentObj.memory[0xFF17] & 0x8) == 0) {
-						if ((parentObj.memory[0xFF17] & 0x7) == 0x7) {
-							parentObj.channel2envelopeVolume += 2;
-						}
-						else {
-							++parentObj.channel2envelopeVolume;
-						}
-					}
-					parentObj.channel2envelopeVolume = (16 - parentObj.channel2envelopeVolume) & 0xF;
-				}
-				else if ((parentObj.memory[0xFF17] & 0xF) == 0x8) {
-					parentObj.channel2envelopeVolume = (1 + parentObj.channel2envelopeVolume) & 0xF;
-				}
-				parentObj.channel2OutputLevelCache();
-			}
-			parentObj.channel2envelopeType = ((data & 0x08) == 0x08);
-			parentObj.memory[0xFF17] = data;
-			parentObj.channel2VolumeEnableCheck();
-		}
-	}
-	//NR23:
-	this.memoryHighWriter[0x18] = this.memoryWriter[0xFF18] = function (parentObj, address, data) {
-		if (parentObj.soundMasterEnabled) {
-			parentObj.audioJIT();
-			parentObj.channel2frequency = (parentObj.channel2frequency & 0x700) | data;
-			parentObj.channel2FrequencyTracker = (0x800 - parentObj.channel2frequency) << 2;
-		}
-	}
-	//NR24:
-	this.memoryHighWriter[0x19] = this.memoryWriter[0xFF19] = function (parentObj, address, data) {
-		if (parentObj.soundMasterEnabled) {
-			parentObj.audioJIT();
-			if (data > 0x7F) {
-				//Reload 0xFF17:
-				var nr22 = parentObj.memory[0xFF17];
-				parentObj.channel2envelopeVolume = nr22 >> 4;
-				parentObj.channel2OutputLevelCache();
-				parentObj.channel2envelopeSweepsLast = (nr22 & 0x7) - 1;
-				if (parentObj.channel2totalLength == 0) {
-					parentObj.channel2totalLength = 0x40;
-				}
-				if ((data & 0x40) == 0x40) {
-					parentObj.memory[0xFF26] |= 0x2;
-				}
-			}
-			parentObj.channel2consecutive = ((data & 0x40) == 0x0);
-			parentObj.channel2frequency = ((data & 0x7) << 8) | (parentObj.channel2frequency & 0xFF);
-			parentObj.channel2FrequencyTracker = (0x800 - parentObj.channel2frequency) << 2;
-			parentObj.memory[0xFF19] = data;
-			parentObj.channel2EnableCheck();
-		}
-	}
-	//NR30:
-	this.memoryHighWriter[0x1A] = this.memoryWriter[0xFF1A] = function (parentObj, address, data) {
-		if (parentObj.soundMasterEnabled) {
-			parentObj.audioJIT();
-			if (!parentObj.channel3canPlay && data >= 0x80) {
-				parentObj.channel3lastSampleLookup = 0;
-				parentObj.channel3UpdateCache();
-			}
-			parentObj.channel3canPlay = (data > 0x7F);
-			if (parentObj.channel3canPlay && parentObj.memory[0xFF1A] > 0x7F && !parentObj.channel3consecutive) {
-				parentObj.memory[0xFF26] |= 0x4;
-			}
-			parentObj.memory[0xFF1A] = data;
-			//parentObj.channel3EnableCheck();
-		}
-	}
-	//NR31:
-	this.memoryHighWriter[0x1B] = this.memoryWriter[0xFF1B] = function (parentObj, address, data) {
-		if (parentObj.soundMasterEnabled || !parentObj.cGBC) {
-			if (parentObj.soundMasterEnabled) {
-				parentObj.audioJIT();
-			}
-			parentObj.channel3totalLength = 0x100 - data;
-			parentObj.channel3EnableCheck();
-		}
-	}
-	//NR32:
-	this.memoryHighWriter[0x1C] = this.memoryWriter[0xFF1C] = function (parentObj, address, data) {
-		if (parentObj.soundMasterEnabled) {
-			parentObj.audioJIT();
-			data &= 0x60;
-			parentObj.memory[0xFF1C] = data;
-			parentObj.channel3patternType = (data == 0) ? 4 : ((data >> 5) - 1);
-		}
-	}
-	//NR33:
-	this.memoryHighWriter[0x1D] = this.memoryWriter[0xFF1D] = function (parentObj, address, data) {
-		if (parentObj.soundMasterEnabled) {
-			parentObj.audioJIT();
-			parentObj.channel3frequency = (parentObj.channel3frequency & 0x700) | data;
-			parentObj.channel3FrequencyPeriod = (0x800 - parentObj.channel3frequency) << 1;
-		}
-	}
-	//NR34:
-	this.memoryHighWriter[0x1E] = this.memoryWriter[0xFF1E] = function (parentObj, address, data) {
-		if (parentObj.soundMasterEnabled) {
-			parentObj.audioJIT();
-			if (data > 0x7F) {
-				if (parentObj.channel3totalLength == 0) {
-					parentObj.channel3totalLength = 0x100;
-				}
-				parentObj.channel3lastSampleLookup = 0;
-				if ((data & 0x40) == 0x40) {
-					parentObj.memory[0xFF26] |= 0x4;
-				}
-			}
-			parentObj.channel3consecutive = ((data & 0x40) == 0x0);
-			parentObj.channel3frequency = ((data & 0x7) << 8) | (parentObj.channel3frequency & 0xFF);
-			parentObj.channel3FrequencyPeriod = (0x800 - parentObj.channel3frequency) << 1;
-			parentObj.memory[0xFF1E] = data;
-			parentObj.channel3EnableCheck();
-		}
-	}
-	//NR40 (Unused I/O):
-	this.memoryHighWriter[0x1F] = this.memoryWriter[0xFF1F] = this.cartIgnoreWrite;
-	//NR41:
-	this.memoryHighWriter[0x20] = this.memoryWriter[0xFF20] = function (parentObj, address, data) {
-		if (parentObj.soundMasterEnabled || !parentObj.cGBC) {
-			if (parentObj.soundMasterEnabled) {
-				parentObj.audioJIT();
-			}
-			parentObj.channel4totalLength = 0x40 - (data & 0x3F);
-			parentObj.channel4EnableCheck();
-		}
-	}
-	//NR42:
-	this.memoryHighWriter[0x21] = this.memoryWriter[0xFF21] = function (parentObj, address, data) {
-		if (parentObj.soundMasterEnabled) {
-			parentObj.audioJIT();
-			if (parentObj.channel4Enabled && parentObj.channel4envelopeSweeps == 0) {
-				//Zombie Volume PAPU Bug:
-				if (((parentObj.memory[0xFF21] ^ data) & 0x8) == 0x8) {
-					if ((parentObj.memory[0xFF21] & 0x8) == 0) {
-						if ((parentObj.memory[0xFF21] & 0x7) == 0x7) {
-							parentObj.channel4envelopeVolume += 2;
-						}
-						else {
-							++parentObj.channel4envelopeVolume;
-						}
-					}
-					parentObj.channel4envelopeVolume = (16 - parentObj.channel4envelopeVolume) & 0xF;
-				}
-				else if ((parentObj.memory[0xFF21] & 0xF) == 0x8) {
-					parentObj.channel4envelopeVolume = (1 + parentObj.channel4envelopeVolume) & 0xF;
-				}
-				parentObj.channel4currentVolume = parentObj.channel4envelopeVolume << parentObj.channel4VolumeShifter;
-			}
-			parentObj.channel4envelopeType = ((data & 0x08) == 0x08);
-			parentObj.memory[0xFF21] = data;
-			parentObj.channel4UpdateCache();
-			parentObj.channel4VolumeEnableCheck();
-		}
-	}
-	//NR43:
-	this.memoryHighWriter[0x22] = this.memoryWriter[0xFF22] = function (parentObj, address, data) {
-		if (parentObj.soundMasterEnabled) {
-			parentObj.audioJIT();
-			parentObj.channel4FrequencyPeriod = Math.max((data & 0x7) << 4, 8) << (data >> 4);
-			var bitWidth = (data & 0x8);
-			if ((bitWidth == 0x8 && parentObj.channel4BitRange == 0x7FFF) || (bitWidth == 0 && parentObj.channel4BitRange == 0x7F)) {
-				parentObj.channel4lastSampleLookup = 0;
-				parentObj.channel4BitRange = (bitWidth == 0x8) ? 0x7F : 0x7FFF;
-				parentObj.channel4VolumeShifter = (bitWidth == 0x8) ? 7 : 15;
-				parentObj.channel4currentVolume = parentObj.channel4envelopeVolume << parentObj.channel4VolumeShifter;
-				parentObj.noiseSampleTable = (bitWidth == 0x8) ? parentObj.LSFR7Table : parentObj.LSFR15Table;
-			}
-			parentObj.memory[0xFF22] = data;
-			parentObj.channel4UpdateCache();
-		}
-	}
-	//NR44:
-	this.memoryHighWriter[0x23] = this.memoryWriter[0xFF23] = function (parentObj, address, data) {
-		if (parentObj.soundMasterEnabled) {
-			parentObj.audioJIT();
-			parentObj.memory[0xFF23] = data;
-			parentObj.channel4consecutive = ((data & 0x40) == 0x0);
-			if (data > 0x7F) {
-				var nr42 = parentObj.memory[0xFF21];
-				parentObj.channel4envelopeVolume = nr42 >> 4;
-				parentObj.channel4currentVolume = parentObj.channel4envelopeVolume << parentObj.channel4VolumeShifter;
-				parentObj.channel4envelopeSweepsLast = (nr42 & 0x7) - 1;
-				if (parentObj.channel4totalLength == 0) {
-					parentObj.channel4totalLength = 0x40;
-				}
-				if ((data & 0x40) == 0x40) {
-					parentObj.memory[0xFF26] |= 0x8;
-				}
-			}
-			parentObj.channel4EnableCheck();
-		}
-	}
-	//NR50:
-	this.memoryHighWriter[0x24] = this.memoryWriter[0xFF24] = function (parentObj, address, data) {
-		if (parentObj.soundMasterEnabled && parentObj.memory[0xFF24] != data) {
-			parentObj.audioJIT();
-			parentObj.memory[0xFF24] = data;
-			parentObj.VinLeftChannelMasterVolume = ((data >> 4) & 0x07) + 1;
-			parentObj.VinRightChannelMasterVolume = (data & 0x07) + 1;
-			parentObj.mixerOutputLevelCache();
-		}
-	}
-	//NR51:
-	this.memoryHighWriter[0x25] = this.memoryWriter[0xFF25] = function (parentObj, address, data) {
-		if (parentObj.soundMasterEnabled && parentObj.memory[0xFF25] != data) {
-			parentObj.audioJIT();
-			parentObj.memory[0xFF25] = data;
-			parentObj.rightChannel1 = ((data & 0x01) == 0x01);
-			parentObj.rightChannel2 = ((data & 0x02) == 0x02);
-			parentObj.rightChannel3 = ((data & 0x04) == 0x04);
-			parentObj.rightChannel4 = ((data & 0x08) == 0x08);
-			parentObj.leftChannel1 = ((data & 0x10) == 0x10);
-			parentObj.leftChannel2 = ((data & 0x20) == 0x20);
-			parentObj.leftChannel3 = ((data & 0x40) == 0x40);
-			parentObj.leftChannel4 = (data > 0x7F);
-			parentObj.channel1OutputLevelCache();
-			parentObj.channel2OutputLevelCache();
-			parentObj.channel3OutputLevelCache();
-			parentObj.channel4OutputLevelCache();
-		}
-	}
-	//NR52:
-	this.memoryHighWriter[0x26] = this.memoryWriter[0xFF26] = function (parentObj, address, data) {
-		parentObj.audioJIT();
-		if (!parentObj.soundMasterEnabled && data > 0x7F) {
-			parentObj.memory[0xFF26] = 0x80;
-			parentObj.soundMasterEnabled = true;
-			parentObj.initializeAudioStartState();
-		}
-		else if (parentObj.soundMasterEnabled && data < 0x80) {
-			parentObj.memory[0xFF26] = 0;
-			parentObj.soundMasterEnabled = false;
-			//GBDev wiki says the registers are written with zeros on power off:
-			for (var index = 0xFF10; index < 0xFF26; index++) {
-				parentObj.memoryWriter[index](parentObj, index, 0);
-			}
-		}
-	}
 	//0xFF27 to 0xFF2F don't do anything...
 	this.memoryHighWriter[0x27] = this.memoryWriter[0xFF27] = this.cartIgnoreWrite;
 	this.memoryHighWriter[0x28] = this.memoryWriter[0xFF28] = this.cartIgnoreWrite;
@@ -8991,55 +7644,6 @@ GameBoyCore.prototype.registerWriteJumpCompile = function () {
 	this.memoryHighWriter[0x2D] = this.memoryWriter[0xFF2D] = this.cartIgnoreWrite;
 	this.memoryHighWriter[0x2E] = this.memoryWriter[0xFF2E] = this.cartIgnoreWrite;
 	this.memoryHighWriter[0x2F] = this.memoryWriter[0xFF2F] = this.cartIgnoreWrite;
-	//WAVE PCM RAM:
-	this.memoryHighWriter[0x30] = this.memoryWriter[0xFF30] = function (parentObj, address, data) {
-		parentObj.channel3WriteRAM(0, data);
-	}
-	this.memoryHighWriter[0x31] = this.memoryWriter[0xFF31] = function (parentObj, address, data) {
-		parentObj.channel3WriteRAM(0x1, data);
-	}
-	this.memoryHighWriter[0x32] = this.memoryWriter[0xFF32] = function (parentObj, address, data) {
-		parentObj.channel3WriteRAM(0x2, data);
-	}
-	this.memoryHighWriter[0x33] = this.memoryWriter[0xFF33] = function (parentObj, address, data) {
-		parentObj.channel3WriteRAM(0x3, data);
-	}
-	this.memoryHighWriter[0x34] = this.memoryWriter[0xFF34] = function (parentObj, address, data) {
-		parentObj.channel3WriteRAM(0x4, data);
-	}
-	this.memoryHighWriter[0x35] = this.memoryWriter[0xFF35] = function (parentObj, address, data) {
-		parentObj.channel3WriteRAM(0x5, data);
-	}
-	this.memoryHighWriter[0x36] = this.memoryWriter[0xFF36] = function (parentObj, address, data) {
-		parentObj.channel3WriteRAM(0x6, data);
-	}
-	this.memoryHighWriter[0x37] = this.memoryWriter[0xFF37] = function (parentObj, address, data) {
-		parentObj.channel3WriteRAM(0x7, data);
-	}
-	this.memoryHighWriter[0x38] = this.memoryWriter[0xFF38] = function (parentObj, address, data) {
-		parentObj.channel3WriteRAM(0x8, data);
-	}
-	this.memoryHighWriter[0x39] = this.memoryWriter[0xFF39] = function (parentObj, address, data) {
-		parentObj.channel3WriteRAM(0x9, data);
-	}
-	this.memoryHighWriter[0x3A] = this.memoryWriter[0xFF3A] = function (parentObj, address, data) {
-		parentObj.channel3WriteRAM(0xA, data);
-	}
-	this.memoryHighWriter[0x3B] = this.memoryWriter[0xFF3B] = function (parentObj, address, data) {
-		parentObj.channel3WriteRAM(0xB, data);
-	}
-	this.memoryHighWriter[0x3C] = this.memoryWriter[0xFF3C] = function (parentObj, address, data) {
-		parentObj.channel3WriteRAM(0xC, data);
-	}
-	this.memoryHighWriter[0x3D] = this.memoryWriter[0xFF3D] = function (parentObj, address, data) {
-		parentObj.channel3WriteRAM(0xD, data);
-	}
-	this.memoryHighWriter[0x3E] = this.memoryWriter[0xFF3E] = function (parentObj, address, data) {
-		parentObj.channel3WriteRAM(0xE, data);
-	}
-	this.memoryHighWriter[0x3F] = this.memoryWriter[0xFF3F] = function (parentObj, address, data) {
-		parentObj.channel3WriteRAM(0xF, data);
-	}
 	//SCY
 	this.memoryHighWriter[0x42] = this.memoryWriter[0xFF42] = function (parentObj, address, data) {
 		if (parentObj.backgroundY != data) {

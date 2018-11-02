@@ -1,4 +1,16 @@
 html, body {
-    font-family: sans-serif;
-    text-align: center;
+	padding-top: 1rem;
+	text-align: center;
+}
+canvas {
+	border: solid 1px black;
+	width: 320px;
+	height: 288px;
+}
+.instructions {
+	text-align: left;
+	line-height: 1.4;
+}
+.instructions h5 {
+	margin-bottom: 0.5rem;
 }

@@ -1,19 +1,41 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="utf-8" />
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<head>
+		<meta charset="utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-        <title>Zum Puzzler Pocket</title>
+		<title>Zum Puzzler Pocket</title>
 
-        <link rel="stylesheet" href="css/index.css" />
+		<link rel="stylesheet" href="css/normalize.css" />
+		<link rel="stylesheet" href="css/skeleton.css" />
+		<link rel="stylesheet" href="css/index.css" />
 
-        <script src="GameBoyCore.js"></script>
-        <script src="GameBoyIO.js"></script>
-        <script src="index.js"></script>
-    </head>
-    <body>
-        <h1>Zum Puzzler Pocket</h1>
-        <canvas></canvas>
-    </body>
+		<script src="js/GameBoyCore.js"></script>
+		<script src="js/GameBoyIO.js"></script>
+		<script src="js/index.js"></script>
+	</head>
+	<body>
+		<div class="container">
+			<h3>Zum Puzzler Pocket</h3>
+			<div class="row">
+				<div class="six columns">
+					<div id="status">Loading...</div>
+					<canvas></canvas>
+				</div>
+				<div class="six columns instructions">
+					<h5>Controls</h5>
+					<ul>
+						<li>Arrow keys</li>
+						<li>Shift = Open pause menu</li>
+						<li>X = A button (select)</li>
+						<li>Z = B button (rotate)</li>
+					</ul>
+
+					<h5>Story</h5>
+					<p>This game continues from a series of several other games, and so has a somewhat convoluted story. The main characters of the story are two Zums, Zap and Zala. After having defeated their first enemy, Zane (who wanted to control of all of the Zums), they are now fighting an evil duck, Ducky. (who also wants to control all of the Zums) Ducky is known for his poor command of written English, his very elaborate (yet short-sighted) evil schemes, and his belief that he is the smartest living thing in existence.</p>
+					<p>In this game, Zala finds herself trapped inside a maze of puzzles inside Duck Enterprises, with Ducky busy chasing after Zap. She makes her way through these puzzles in an attempt to escape.</p>
+				</div>
+			</div>
+		</div>
+	</body>
 </html>
